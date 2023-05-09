@@ -10,6 +10,7 @@ from dash.exceptions import PreventUpdate
 from icons import icons
 
 
+
 def icon_file(extension, width=24, height=24):
     """Retrun an html.img of the svg icon for a given extension."""
     filetype = icons.get(extension)
@@ -46,6 +47,23 @@ def file_info(path):
     }
     return d
 
+def is_git_repo(path):
+    if not os.path.isdir(path):
+        return False
+
+    os.chdir(path)
+    if not os.path.isdir(".git"):
+        return False
+
+    try:
+        git_status = os.popen("git status").read()
+        if "fatal" in git_status.lower():
+            return False
+        else:
+            return True
+    except:
+        return False
+
 
 app = Dash(
     __name__,
@@ -81,6 +99,9 @@ app.layout = html.Div([
                                   id='parent_dir'))),
             html.H3([html.Code(os.getcwd(), id='cwd')]),
                     html.Br(), html.Br(),
+            dbc.Col([html.Button('git init', id={'type': 'git_button', 'index': 1}, n_clicks=0, disabled = False),  # git init button
+                html.Button('not git repo', id={'type': 'git_button', 'index': 2}, disabled=True),  # is git repo button, but disabled
+                ]),
             html.Div(id='cwd_files',
                      style={'height': 500, 'overflow': 'scroll'}),
         ], lg=10, sm=11, md=10)
@@ -147,6 +168,21 @@ def store_clicked_file(n_clicks, title):
     ctx = callback_context
     index = ctx.triggered_id['index']
     return title[index]
+
+@app.callback(
+    Output({'type': 'git_button', 'index': 1}, "hidden"),
+    Output({'type': 'git_button', 'index': 2}, "children"),
+    Input({'type': 'git_button', 'index': 1}, 'n_clicks'),
+    Input('cwd', 'children')
+)
+def git_init(n_clicks, cwd):
+    path = Path(cwd)
+    if is_git_repo(path):
+        return True, 'git repository'
+
+    if n_clicks == 1:
+        os.system("cd " + str(path) + " && git init")
+    return False, 'not git repostory'
 
 if __name__ == '__main__':
     app.run_server(debug=True)

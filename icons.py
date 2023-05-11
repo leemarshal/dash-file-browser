@@ -1007,5 +1007,10 @@ icons = {
     'yy': 'gamemaker2',
     'yyp': 'gamemaker2',
     'zip': 'zip2',
-    'zipx': 'zip2'
+    'zipx': 'zip2',
+    'untracked': 'untracked',
+    'staged': 'staged',
+    'modified': 'modified',
+    'committed': 'committed',
+    '.git': "git"
  }

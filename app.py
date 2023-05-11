@@ -152,26 +152,51 @@ def list_cwd_files(cwd):
     path = Path(cwd)
     all_file_details = []
     if path.is_dir():
-        files = sorted(os.listdir(path), key=str.lower)
-        for i, file in enumerate(files):
-            filepath = Path(file)
-            full_path=os.path.join(cwd, filepath.as_posix())
-            is_dir = Path(full_path).is_dir()
-            link = html.A([
-                html.Span(
-                file, id={'type': 'listed_file', 'index': i},
-                title=full_path,
-                style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
-            )], href='#')
-            details = file_info(Path(full_path))
-            details['filename'] = link
-            if is_dir:
-                details['extension'] = html.Img(
-                    src=app.get_asset_url('icons/default_folder.svg'),
-                    width=25, height=25)
-            else:
-                details['extension'] = icon_file(details['extension'][1:])
-            all_file_details.append(details)
+        if not is_git_repo(path):
+            files = sorted(os.listdir(path), key=str.lower)
+            for i, file in enumerate(files):
+                filepath = Path(file)
+                full_path=os.path.join(cwd, filepath.as_posix())
+                is_dir = Path(full_path).is_dir()
+                link = html.A([
+                    html.Span(
+                    file, id={'type': 'listed_file', 'index': i},
+                    title=full_path,
+                    style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
+                )], href='#')
+                details = file_info(Path(full_path))
+                details['filename'] = link
+                if is_dir:
+                    details['extension'] = html.Img(
+                        src=app.get_asset_url('icons/default_folder.svg'),
+                        width=25, height=25)
+                else:
+                    details['extension'] = icon_file(details['extension'][1:])
+                all_file_details.append(details)
+        #git repository인 경우..
+        else:
+            files = sorted(os.listdir(path), key=str.lower)
+            for i, file in enumerate(files):
+                filepath = Path(file)
+                full_path = os.path.join(cwd, filepath.as_posix())
+                is_dir = Path(full_path).is_dir()
+                link = html.A([
+                    html.Span(
+                        file, id={'type': 'listed_file', 'index': i},
+                        title=full_path,
+                        style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
+                    )], href='#')
+                details = file_info(Path(full_path))
+                details['filename'] = link
+                if get_git_file_status(file) == 'untracked':
+                    details['extension'] = icon_file("untracked")
+                elif get_git_file_status(file) == 'staged':
+                    details['extension'] = icon_file("staged")
+                elif get_git_file_status(file) == 'modified':
+                    details['extension'] = icon_file("modified")
+                elif get_git_file_status(file) == 'committed':
+                    details['extension'] = icon_file("committed")
+                all_file_details.append(details)
 
     df = pd.DataFrame(all_file_details)
     df = df.rename(columns={"extension": ''})

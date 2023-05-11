@@ -72,14 +72,14 @@ def file_info(path):
 def is_git_repo(path):
     if not os.path.isdir(path):
         return False
-
     os.chdir(path)
-    if not os.path.isdir(".git"):
-        return False
-
+    if os.path.isdir(".git"):
+        return True
     try:
-        git_status = os.popen("git status").read()
-        if "fatal" in git_status.lower():
+        result = subprocess.run(['git', 'status'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = result.stderr.decode('utf-8')
+        # git_status = os.popen("git status").read()
+        if "fatal" in output.lower():
             return False
         else:
             return True
@@ -128,7 +128,7 @@ app.layout = html.Div([
                      style={'height': 500, 'overflow': 'scroll'}),
         ], lg=10, sm=11, md=10)
     ])
-] + [html.Br() for _ in range(15)])
+] + [html.Br() for _ in range(15)] + [html.Div(id='dummy2', n_clicks=0)])
 
 
 @app.callback(
@@ -147,8 +147,10 @@ def get_parent_directory(stored_cwd, n_clicks, currentdir):
 
 @app.callback(
     Output('cwd_files', 'children'),
-    Input('cwd', 'children'))
-def list_cwd_files(cwd):
+    Input('cwd', 'children'),
+    Input('dummy2', 'n_clicks')
+)
+def list_cwd_files(cwd, d2_clk):
     path = Path(cwd)
     all_file_details = []
     if path.is_dir():
@@ -188,13 +190,14 @@ def list_cwd_files(cwd):
                     )], href='#')
                 details = file_info(Path(full_path))
                 details['filename'] = link
-                if get_git_file_status(file) == 'untracked':
+                status = get_git_file_status(file)
+                if status == 'untracked':
                     details['extension'] = icon_file("untracked")
-                elif get_git_file_status(file) == 'staged':
+                elif status == 'staged':
                     details['extension'] = icon_file("staged")
-                elif get_git_file_status(file) == 'modified':
+                elif status == 'modified':
                     details['extension'] = icon_file("modified")
-                elif get_git_file_status(file) == 'committed':
+                elif status == 'committed':
                     details['extension'] = icon_file("committed")
                 all_file_details.append(details)
 
@@ -217,19 +220,19 @@ def store_clicked_file(n_clicks, title):
     return title[index]
 
 @app.callback(
-    Output({'type': 'git_button', 'index': 1}, "hidden"),
-    Output({'type': 'git_button', 'index': 2}, "children"),
+    Output('dummy2', "n_clicks"),
     Input({'type': 'git_button', 'index': 1}, 'n_clicks'),
-    Input('cwd', 'children')
+    State('cwd', 'children'),
+    State('dummy2', "n_clicks")
 )
-def git_init(n_clicks, cwd):
+def git_init(n_clicks, cwd, d_clk):
+    if n_clicks == 0:
+        raise PreventUpdate
     path = Path(cwd)
-    if is_git_repo(path):
-        return True, 'git repository'
-
-    if n_clicks == 1:
+    d_clk=d_clk+1
+    if not is_git_repo(path):
         os.system("cd " + str(path) + " && git init")
-    return False, 'not git repostory'
+    return d_clk
 
 if __name__ == '__main__':
     app.run_server(debug=True)

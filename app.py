@@ -1,5 +1,6 @@
 import datetime
 import os
+import subprocess
 from pathlib import Path
 
 import dash_bootstrap_components as dbc
@@ -23,7 +24,28 @@ def icon_file(extension, width=24, height=24):
 def nowtimestamp(timestamp, fmt='%b %d, %Y %H:%M'):
     return datetime.datetime.fromtimestamp(timestamp).strftime(fmt)
 
-
+def get_git_file_status(filename):
+    # Git의 status 명령을 실행하고 출력 결과를 파싱합니다.
+    git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
+        'utf-8')
+    committed = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE)
+    if git_status.startswith('??'):
+        # 파일이 Git 저장소에 추가되지 않았습니다.
+        return 'untracked'
+    elif git_status.startswith('MM'):
+        return 'modified'
+    elif git_status.startswith('AM'):
+        return 'modified'
+    elif git_status.startswith('A '):
+        # 파일이 추가되어 staging area에 있습니다.
+        return 'staged'
+    elif git_status.startswith('M '):
+        # 파일이 수정되어 staging area에 있습니다.
+        return 'staged'
+    elif git_status.startswith(' M'):
+        return 'modified'
+    else:
+        return 'committed'
 def file_info(path):
     """Get file info for a given path.
 

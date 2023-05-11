@@ -1,3 +1,4 @@
 dash
+dash_mantine_components
 dash-bootstrap-components
 pandas

@@ -2,7 +2,7 @@ import datetime
 import os
 import subprocess
 from pathlib import Path
-
+import dash_mantine_components as dmc
 import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import ALL, Dash, Input, Output, State, callback_context, dcc, html
@@ -57,6 +57,7 @@ def file_info(path):
     """
     file_stat = path.stat()
     d = {
+        'chbox': False,
         'extension': path.suffix if not path.name.startswith('.') else path.name,
         'filename': path.name,
         # 'fullpath': str(path.absolute()),
@@ -167,6 +168,7 @@ def list_cwd_files(cwd, d2_clk):
                     style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
                 )], href='#')
                 details = file_info(Path(full_path))
+                details['chbox'] = dmc.Checkbox(id={'type': 'dynamic-checkbox', 'index': i}, checked=False)
                 details['filename'] = link
                 if is_dir:
                     details['extension'] = html.Img(
@@ -189,6 +191,7 @@ def list_cwd_files(cwd, d2_clk):
                         style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
                     )], href='#')
                 details = file_info(Path(full_path))
+                details['chbox'] = dmc.Checkbox(id={'type': 'dynamic-checkbox', 'index': i}, checked=False)
                 details['filename'] = link
                 status = get_git_file_status(file)
                 if status == 'untracked':

@@ -1,5 +1,6 @@
 
 # Dash File Browser with Git repository management service
+## Open Source SW Project #1 (2023-1)
 
 ## Feature #1: File explorer (file browser)
 The service provides a GUI for browsing files and directories on your computer. 
@@ -49,10 +50,10 @@ current working directory (git init).
     *   After the commit, the status of the staged files is changed as committed.
 
 ## Important Notes
+__(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__
+
 - Programming language: Python과 dash 프레임워크를 사용
 - Platform to run: Web
-
- <span style="color:red"> __(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__  </span>
 - Python wrapper를 사용하기 위해 Git CLI와 호환되는 Python 3.6 이상을 추천합니다.
 - Git 버전은 Git CLI와의 호환성을 유지하기 위해 최신 버전을 사용하는 것을 추천합니다.
 - 운영체제는 Mac, Linux, Windows 모두에서 사용할 수 있지만, Unix 기반 시스템에서 실행할 때 가장 잘 작동합니다.

@@ -7,9 +7,8 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import ALL, Dash, Input, Output, State, callback_context, dcc, html
 from dash.exceptions import PreventUpdate
-
 from icons import icons
-
+import re
 
 
 def icon_file(extension, width=24, height=24):
@@ -46,6 +45,61 @@ def get_git_file_status(filename):
         return 'modified'
     else:
         return 'committed'
+def get_git_status_meaning(filename):
+    git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
+        'utf-8')
+    parse = git_status.split('\n')
+    status = []
+    meaning = []
+    for p in parse:
+        status.append(p[:2])
+    for s in status:
+        if re.match(' [AMD]', s):
+            meaning.append("not updated")
+        elif re.match('M[ MTD]', s):
+            meaning.append("updated in index")
+        elif re.match('T[ MTD]', s):
+            meaning.append("type change in index")
+        elif re.match('A[ MTD]', s):
+            meaning.append("added to index")
+        elif s == "D ":
+            meaning.append("deleted from index")
+        elif re.match('R[ MTD]', s):
+            meaning.append("renamed in index")
+        elif re.match('C[ MTD]', s):
+            meaning.append("copied in index")
+        elif re.match('[MTARC] ', s):
+            meaning.append("index and work tree matches")
+        elif re.match('[ MTARC]M', s):
+            meaning.append("work tree changed since index")
+        elif re.match('[ MTARC]T', s):
+            meaning.append("type changed in work tree since index")
+        elif re.match('[ MTARC]D', s):
+            meaning.append("deleted from index")
+        elif s == " R":
+            meaning.append("renamed in work tree")
+        elif s == " C":
+            meaning.append("copied in index")
+        elif s == "DD":
+            meaning.append("unmerged, both deleted")
+        elif s == "AU":
+            meaning.append("unmerged, added by us")
+        elif s == "UD":
+            meaning.append("unmerged, deleted by them")
+        elif s == "UA":
+            meaning.append("unmerged, added by them")
+        elif s == "DU":
+            meaning.append("unmerged, deleted by us")
+        elif s == "AA":
+            meaning.append("unmerged, both added")
+        elif s == "UU":
+            meaning.append("unmerged, both modified")
+        elif s == "??":
+            meaning.append("untracked")
+        elif s == "!!":
+            meaning.append("ignored")
+    return meaning
+
 def file_info(path):
     """Get file info for a given path.
 

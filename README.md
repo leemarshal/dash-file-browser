@@ -65,11 +65,19 @@ A simple file browser for Plotly Dash applications.
 ## To run: 
 
 ```bash
-pip install -r requirements
+pip install -r requirements.txt
 python app.py
 
 또는
 
-pip3 install -r requirements
+pip3 install -r requirements.txt
 python3 app.py
+```
+
+## 설치되는 항목
+```bash
+dash
+dash_mantine_components
+dash-bootstrap-components
+pandas
 ```

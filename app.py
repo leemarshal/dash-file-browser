@@ -28,7 +28,10 @@ def get_git_file_status(filename):
     git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
         'utf-8')
     committed = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE)
-    if git_status.startswith('??'):
+    parse = git_status.split()
+    if len(parse)>=3:
+        return '??'
+    elif git_status.startswith('??'):
         # 파일이 Git 저장소에 추가되지 않았습니다.
         return 'untracked'
     elif git_status.startswith('MM'):
@@ -284,6 +287,17 @@ def list_cwd_files(cwd, d2_clk):
                     details['extension'] = icon_file("modified")
                 elif status == 'committed':
                     details['extension'] = icon_file("committed")
+                elif status == '??':
+                    details['extension'] = icon_file("modified")
+                    string = ''
+                    result = get_git_status_meaning(file)
+                    for i in range(len(result)):
+                        string += result[i]
+                        if i != len(result) - 1:
+                            string += " && "
+                    details['status'] = string
+
+
                 all_file_details.append(details)
 
     df = pd.DataFrame(all_file_details)

@@ -1,4 +1,3 @@
-import datetime
 import os
 import subprocess
 from pathlib import Path
@@ -35,7 +34,7 @@ def get_git_file_status(filename):
         # 파일이 Git 저장소에 추가되지 않았습니다.
         return 'untracked'
     elif git_status.startswith('MM') or git_status.startswith('AM'):
-        return '??'
+        return 'modified'
     elif git_status.startswith('A '):
         # 파일이 추가되어 staging area에 있습니다.
         return 'staged'
@@ -226,13 +225,19 @@ def get_parent_directory(stored_cwd, n_clicks, currentdir):
     parent = Path(currentdir).parent.as_posix()
     return parent
 
-
 @app.callback(
     Output('cwd_files', 'children'),
     Input('cwd', 'children'),
-    Input('dummy2', 'n_clicks')
+    Input('dummy2', "n_clicks"),
+    Input('dummy4', "n_clicks"),
+    Input('dummy5', "n_clicks"),
+    Input('dummy6', "n_clicks"),
+    Input('dummy7', "n_clicks"),
+    Input('dummy8', "n_clicks"),
+    Input('dummy9', "n_clicks"),
+    Input('dummy10', "n_clicks")
 )
-def list_cwd_files(cwd, d2_clk):
+def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, clk_d10):
     path = Path(cwd)
     all_file_details = []
     if path.is_dir():
@@ -382,6 +387,27 @@ def check(n_clicks, checked, cwd):
     return is_git, msg, True, True, True, True, True, True, True, 0
 
 @app.callback(
+    Output({'type': 'git_button', 'index': 4}, 'n_clicks'),
+    Output('dummy4', 'n_clicks'),
+    State({'type': 'git_button', 'index': 3}, 'value'),
+    State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
+    State('cwd', 'children'),
+    State('dummy4', 'n_clicks'),
+    Input({'type': 'git_button', 'index': 4}, 'n_clicks')
+)
+def git_add(value, checked, cwd,d_clk, n_clicks):
+
+    if n_clicks == 1:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        staged = []
+        for i in range(len(checked)):
+            if checked[i] == True:
+                staged.append(files[i])
+        for file in staged:
+            os.system("cd " + str(Path(cwd)) + " && git add " + file)
+        return 0, d_clk + 1
+    return 0, d_clk
+@app.callback(
     Output({'type': 'git_button', 'index': 5}, 'n_clicks'),
     Output('dummy5', 'n_clicks'),
     State({'type': 'git_button', 'index': 3}, 'value'),
@@ -402,6 +428,39 @@ def git_restore(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
+@app.callback(
+    Output({'type': 'git_button', 'index': 6}, 'n_clicks'),
+    Output('dummy6', 'n_clicks'),
+    State({'type': 'git_button', 'index': 3}, 'value'),
+    State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
+    State('cwd', 'children'),
+    State('dummy6', 'n_clicks'),
+    Input({'type': 'git_button', 'index': 6}, 'n_clicks')
+)
+def git_unstaged(value, checked, cwd, d_clk, n_clicks):
+    if n_clicks==1:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        staged = []
+        d_clk=d_clk+1
+        for i in range(len(checked)):
+            if checked[i] == True:
+                staged.append(files[i])
+        try:
+            os.system("cd " + str(Path(cwd)))
+            # d = os.getcwd()
+            # os.system("git log --pretty=oneline")
+            result = subprocess.run(['git', 'log', '--pretty=oneline'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output = result.stderr.decode('utf-8')
+            # git_log = os.popen("git log --pretty=oneline").read()
+            if "fatal" in output.lower():
+                    for file in staged:
+                        os.system("cd " + str(Path(cwd)) + " && git rm --cached " + file)
+            else:
+                    for file in staged:
+                        os.system("cd " + str(Path(cwd)) + " && git restore --staged " + file)
+        except:
+            return 0, d_clk
+    return 0, d_clk
 @app.callback(
     Output({'type': 'git_button', 'index': 7}, 'n_clicks'),
     Output('dummy7', 'n_clicks'),

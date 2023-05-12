@@ -205,6 +205,8 @@ def list_cwd_files(cwd, d2_clk):
                 all_file_details.append(details)
         #git repository인 경우..
         else:
+
+
             files = sorted(os.listdir(path), key=str.lower)
             for i, file in enumerate(files):
                 filepath = Path(file)

@@ -65,6 +65,10 @@ A simple file browser for Plotly Dash applications.
 
 ```bash
 pip install -r requirements
-
 python app.py
+
+또는
+
+pip3 install -r requirements
+python3 app.py
 ```

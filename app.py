@@ -507,22 +507,24 @@ def git_delete(value, checked, cwd, d_clk, n_clicks):
 
 @app.callback(
     Output({'type': 'git_button', 'index': 9}, 'n_clicks'),
+    Output('dummy9', 'n_clicks'),
     State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
     State('cwd', 'children'),
+    State('dummy9', 'n_clicks'),
     Input({'type': 'git_button', 'index': 9}, 'n_clicks'),
     State('rename', 'value')
 )
-def git_rename( checked, cwd, n_clicks, value):
-    index = 0
-    for i in range(len(checked)):
-        if checked[i]:
-            index = i
-            break
+def git_rename( checked, cwd, n_clicks, d_clk, value):
     if n_clicks:
+        index = 0
+        for i in range(len(checked)):
+            if checked[i]:
+                index = i
+                break
         files = sorted(os.listdir(cwd), key=str.lower)
         os.system("cd " + str(Path(cwd)) + " && git mv " + files[index] + " " + value)
-        app.logger.info("cd " + str(Path(cwd)) + " && git mv " + files[index] + " " + value)
-    return 0
+        return 0, d_clk + 1
+    return 0, d_clk
 
 @app.callback(Output('confirm', 'displayed'),
               Output('confirm', 'message'),
@@ -530,23 +532,25 @@ def git_rename( checked, cwd, n_clicks, value):
               Input({'type': 'git_button', 'index': 10}, 'n_clicks'))
 def update_output(n_clicks):
     if n_clicks:
-        app.logger.info(os.popen("git status").read())
         return True, os.popen("git status").read()
     return False, ''
 
+#git commit -> callback
 @app.callback(
     Output({'type': 'git_button', 'index': 10}, 'n_clicks'),
+    Output('dummy10', 'n_clicks'),
     State('cwd', 'children'),
     State('commit', 'value'),
+    State('dummy10', 'n_clicks'),
     Input('confirm', 'submit_n_clicks')
 )
-def git_commit(cwd, value, submit_n_clicks):
+def git_commit(cwd, value, d_clk, submit_n_clicks):
     if submit_n_clicks:
         files = sorted(os.listdir(cwd), key=str.lower)
         os.system("cd " + str(Path(cwd)) + " && git commit -m \"" + value + "\"")
-        app.logger.info("cd " + str(Path(cwd)) + " && git commit -m \"" + value + "\"")
-        return 0
-    return 0
+        return 0, d_clk + 1
+    return 0, d_clk
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

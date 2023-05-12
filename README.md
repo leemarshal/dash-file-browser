@@ -50,7 +50,7 @@ current working directory (git init).
     *   After the commit, the status of the staged files is changed as committed.
 
 ## Important Notes
-__(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__
+### __(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__
 
 - Programming language: Python과 dash 프레임워크를 사용
 - Platform to run: Web

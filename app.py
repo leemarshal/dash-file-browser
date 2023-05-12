@@ -29,15 +29,13 @@ def get_git_file_status(filename):
         'utf-8')
     committed = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE)
     parse = git_status.split()
-    if len(parse)>=3:
+    if len(parse) >= 3:
         return '??'
     elif git_status.startswith('??'):
         # 파일이 Git 저장소에 추가되지 않았습니다.
         return 'untracked'
-    elif git_status.startswith('MM'):
-        return 'modified'
-    elif git_status.startswith('AM'):
-        return 'modified'
+    elif git_status.startswith('MM') or git_status.startswith('AM'):
+        return '??'
     elif git_status.startswith('A '):
         # 파일이 추가되어 staging area에 있습니다.
         return 'staged'
@@ -288,7 +286,7 @@ def list_cwd_files(cwd, d2_clk):
                 elif status == 'committed':
                     details['extension'] = icon_file("committed")
                 elif status == '??':
-                    details['extension'] = icon_file("modified")
+                    details['extension'] = icon_file("??")
                     string = ''
                     result = get_git_status_meaning(file)
                     for i in range(len(result)):
@@ -296,8 +294,6 @@ def list_cwd_files(cwd, d2_clk):
                         if i != len(result) - 1:
                             string += " && "
                     details['status'] = string
-
-
                 all_file_details.append(details)
 
     df = pd.DataFrame(all_file_details)
@@ -330,7 +326,8 @@ def git_init(n_clicks, cwd, d_clk):
     path = Path(cwd)
     d_clk=d_clk+1
     if not is_git_repo(path):
-        os.system("cd " + str(path) + " && git init")
+        os.system("cd " + str(path)
+                  + " && git init")
     return d_clk
 
 @app.callback(
@@ -383,6 +380,70 @@ def check(n_clicks, checked, cwd):
         else:  # multiple check -> rename unable
             return is_git, msg, True, True, True, False, False, True, True, 0
     return is_git, msg, True, True, True, True, True, True, True, 0
+
+@app.callback(
+    Output({'type': 'git_button', 'index': 5}, 'n_clicks'),
+    Output('dummy5', 'n_clicks'),
+    State({'type': 'git_button', 'index': 3}, 'value'),
+    State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
+    State('cwd', 'children'),
+    State('dummy5', 'n_clicks'),
+    Input({'type': 'git_button', 'index': 5}, 'n_clicks')
+)
+def git_restore(value, checked, cwd, d_clk, n_clicks):
+    if n_clicks == 1:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        staged = []
+        for i in range(len(checked)):
+            if checked[i] == True:
+                staged.append(files[i])
+        for file in staged:
+            os.system("cd " + str(Path(cwd)) + " && git restore " + file)
+        return 0, d_clk + 1
+    return 0, d_clk
+
+@app.callback(
+    Output({'type': 'git_button', 'index': 7}, 'n_clicks'),
+    Output('dummy7', 'n_clicks'),
+    State({'type': 'git_button', 'index': 3}, 'value'),
+    State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
+    State('cwd', 'children'),
+    State('dummy7', 'n_clicks'),
+    Input({'type': 'git_button', 'index': 7}, 'n_clicks')
+)
+def git_untracked(value, checked, cwd, d_clk, n_clicks):
+    if n_clicks == 1:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        staged = []
+        for i in range(len(checked)):
+            if checked[i] == True:
+                staged.append(files[i])
+        for file in staged:
+            os.system("cd " + str(Path(cwd)) + " && git rm --cached " + file)
+        return 0, d_clk + 1
+    return 0, d_clk
+
+@app.callback(
+    Output({'type': 'git_button', 'index': 8}, 'n_clicks'),
+    Output('dummy8', 'n_clicks'),
+    State({'type': 'git_button', 'index': 3}, 'value'),
+    State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
+    State('cwd', 'children'),
+    State('dummy8', 'n_clicks'),
+    Input({'type': 'git_button', 'index': 8}, 'n_clicks')
+)
+def git_delete(value, checked, cwd, d_clk, n_clicks):
+
+    if n_clicks == 1:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        staged = []
+        for i in range(len(checked)):
+            if checked[i] == True:
+                staged.append(files[i])
+        for file in staged:
+            os.system("cd " + str(Path(cwd)) + " && git rm " + file)
+        return 0, d_clk + 1
+    return 0, d_clk
 
 if __name__ == '__main__':
     app.run_server(debug=True)

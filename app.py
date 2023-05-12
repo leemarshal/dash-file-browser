@@ -1,3 +1,4 @@
+import datetime
 import os
 import subprocess
 from pathlib import Path
@@ -186,7 +187,7 @@ app.layout = html.Div([
                 html.Button('delete', id={'type': 'git_button', 'index': 8},  disabled = True,style={"margin-left": "15px"}),
                 dcc.Input(id='rename', placeholder = 'Enter a name to replace', debounce=True, value='', type='text',style={"margin-left": "15px"}),
                 dcc.Store(id='store', data={}),
-                html.Button('rename', id={'type': 'git_button', 'index': 9},  disabled = True),
+                html.Button('rename', id={'type': 'git_button', 'index': 9},  disabled = True), # 'rename'
                 dcc.Input(id='commit', placeholder = 'Enter a commit message', debounce=True, value='', type='text',style={"margin-left": "15px"}), # 'commit'
                 html.Button('commit', id={'type': 'git_button', 'index': 10}, disabled= False)
                      ]),
@@ -503,6 +504,49 @@ def git_delete(value, checked, cwd, d_clk, n_clicks):
             os.system("cd " + str(Path(cwd)) + " && git rm " + file)
         return 0, d_clk + 1
     return 0, d_clk
+
+@app.callback(
+    Output({'type': 'git_button', 'index': 9}, 'n_clicks'),
+    State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
+    State('cwd', 'children'),
+    Input({'type': 'git_button', 'index': 9}, 'n_clicks'),
+    State('rename', 'value')
+)
+def git_rename( checked, cwd, n_clicks, value):
+    index = 0
+    for i in range(len(checked)):
+        if checked[i]:
+            index = i
+            break
+    if n_clicks:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        os.system("cd " + str(Path(cwd)) + " && git mv " + files[index] + " " + value)
+        app.logger.info("cd " + str(Path(cwd)) + " && git mv " + files[index] + " " + value)
+    return 0
+
+@app.callback(Output('confirm', 'displayed'),
+              Output('confirm', 'message'),
+              # Output('confirm', 'submit_n_clicks'),
+              Input({'type': 'git_button', 'index': 10}, 'n_clicks'))
+def update_output(n_clicks):
+    if n_clicks:
+        app.logger.info(os.popen("git status").read())
+        return True, os.popen("git status").read()
+    return False, ''
+
+@app.callback(
+    Output({'type': 'git_button', 'index': 10}, 'n_clicks'),
+    State('cwd', 'children'),
+    State('commit', 'value'),
+    Input('confirm', 'submit_n_clicks')
+)
+def git_commit(cwd, value, submit_n_clicks):
+    if submit_n_clicks:
+        files = sorted(os.listdir(cwd), key=str.lower)
+        os.system("cd " + str(Path(cwd)) + " && git commit -m \"" + value + "\"")
+        app.logger.info("cd " + str(Path(cwd)) + " && git commit -m \"" + value + "\"")
+        return 0
+    return 0
 
 if __name__ == '__main__':
     app.run_server(debug=True)

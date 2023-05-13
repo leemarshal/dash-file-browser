@@ -10,7 +10,6 @@ from dash.exceptions import PreventUpdate
 from icons import icons
 import re
 
-
 def icon_file(extension, width=24, height=24):
     """Retrun an html.img of the svg icon for a given extension."""
     filetype = icons.get(extension)
@@ -23,8 +22,9 @@ def icon_file(extension, width=24, height=24):
 def nowtimestamp(timestamp, fmt='%b %d, %Y %H:%M'):
     return datetime.datetime.fromtimestamp(timestamp).strftime(fmt)
 
+# git status: 파일 상태를 확인
 def get_git_file_status(filename):
-    # Git의 status 명령을 실행하고 출력 결과를 파싱합니다.
+    # Git의 status 명령을 실행하고 출력 결과를 파싱
     git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
         'utf-8')
     committed = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE)
@@ -32,20 +32,21 @@ def get_git_file_status(filename):
     if len(parse) >= 3:
         return '??'
     elif git_status.startswith('??'):
-        # 파일이 Git 저장소에 추가되지 않았습니다.
+        # 파일이 Git 저장소에 추가되지 않았음
         return 'untracked'
     elif git_status.startswith('MM') or git_status.startswith('AM'):
         return 'modified'
     elif git_status.startswith('A '):
-        # 파일이 추가되어 staging area에 있습니다.
+        # 파일이 추가되어 staging area에 있음
         return 'staged'
     elif git_status.startswith('M '):
-        # 파일이 수정되어 staging area에 있습니다.
+        # 파일이 수정되어 staging area에 있음.
         return 'staged'
     elif git_status.startswith(' M'):
         return 'modified'
     else:
         return 'committed'
+    
 def get_git_status_meaning(filename):
     git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
         'utf-8')
@@ -125,6 +126,7 @@ def file_info(path):
     }
     return d
 
+#git repository
 def is_git_repo(path):
     if not os.path.isdir(path):
         return False
@@ -142,7 +144,6 @@ def is_git_repo(path):
     except:
         return False
 
-
 app = Dash(
     __name__,
     title='Dash File Browser',
@@ -157,6 +158,7 @@ need to manipulate and analyze files on the server."""},
 
 server = app.server
 
+#button 구현
 app.layout = html.Div([
     html.Link(
         rel="stylesheet",
@@ -184,14 +186,13 @@ app.layout = html.Div([
                 html.Button('restore', id={'type': 'git_button', 'index': 5},  disabled = True,style={"margin-left": "15px"}),  # 'restore'
                 html.Button('unstaged', id={'type': 'git_button', 'index': 6}, n_clicks=0, disabled = True,style={"margin-left": "15px"}),  # 'unstaged'
                 html.Button('untracked', id={'type': 'git_button', 'index': 7},  disabled = True,style={"margin-left": "15px"}),  # 'untracked'
-                html.Button('delete', id={'type': 'git_button', 'index': 8},  disabled = True,style={"margin-left": "15px"}),
+                html.Button('delete', id={'type': 'git_button', 'index': 8},  disabled = True,style={"margin-left": "15px"}), # 'delete'
                 dcc.Input(id='rename', placeholder = 'Enter a name to replace', debounce=True, value='', type='text',style={"margin-left": "15px"}),
                 dcc.Store(id='store', data={}),
                 html.Button('rename', id={'type': 'git_button', 'index': 9},  disabled = True), # 'rename'
                 dcc.Input(id='commit', placeholder = 'Enter a commit message', debounce=True, value='', type='text',style={"margin-left": "15px"}), # 'commit'
                 html.Button('commit', id={'type': 'git_button', 'index': 10}, disabled= False)
                      ]),
-            # 'delete'
             dcc.ConfirmDialog(
                     id='confirm',
                     message='Are you sure you want to delete this item?',
@@ -226,6 +227,7 @@ def get_parent_directory(stored_cwd, n_clicks, currentdir):
     parent = Path(currentdir).parent.as_posix()
     return parent
 
+#parent directory를 가져옴
 @app.callback(
     Output('cwd_files', 'children'),
     Input('cwd', 'children'),
@@ -264,10 +266,8 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                 else:
                     details['extension'] = icon_file(details['extension'][1:])
                 all_file_details.append(details)
-        #git repository인 경우..
+        #git repository인 경우
         else:
-
-
             files = sorted(os.listdir(path), key=str.lower)
             for i, file in enumerate(files):
                 filepath = Path(file)
@@ -308,7 +308,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                                      hover=True, size='sm')
     return html.Div(table)
 
-
+#클릭한 파일의 이름을 반환
 @app.callback(
     Output('stored_cwd', 'data'),
     Input({'type': 'listed_file', 'index': ALL}, 'n_clicks'),
@@ -320,6 +320,7 @@ def store_clicked_file(n_clicks, title):
     index = ctx.triggered_id['index']
     return title[index]
 
+#git init
 @app.callback(
     Output('dummy2', "n_clicks"),
     Input({'type': 'git_button', 'index': 1}, 'n_clicks'),
@@ -336,6 +337,7 @@ def git_init(n_clicks, cwd, d_clk):
                   + " && git init")
     return d_clk
 
+#checkbox를 활용해 command할 파일 선택
 @app.callback(
     Output({'type': 'git_button', 'index': 1}, 'disabled'),  # git_init
     Output({'type': 'git_button', 'index': 2}, 'children'),  # is_git_repo
@@ -372,7 +374,7 @@ def check(n_clicks, checked, cwd):
     #modified --> git add + git restore
     if set(states) and set(states).issubset(set(['modified'])):
         return is_git, msg, False, False, True, True, True, True, True, 0
-    # update할 파일이 untracked인 경우 or modified인경우 ==> git add 가능
+    # update할 파일이 untracked인 경우 or modified인경우 --> git add 가능
     elif set(states) and set(states).issubset(set(['modified', 'untracked'])):
         return is_git, msg, False, True, True, True, True, True,True, 0
     # git restore
@@ -383,10 +385,12 @@ def check(n_clicks, checked, cwd):
     elif set(states) and set(states).issubset(set(['committed'])):
         if len(states) == 1:  # check 1 -> rename able
             return is_git, msg, True, True, True, False, False, False, False, 0
-        else:  # multiple check -> rename unable
+        else:  # multiple check --> rename unable
             return is_git, msg, True, True, True, False, False, True, True, 0
     return is_git, msg, True, True, True, True, True, True, True, 0
 
+
+#Add (git add) [ untracked -> staged / modified -> staged ]
 @app.callback(
     Output({'type': 'git_button', 'index': 4}, 'n_clicks'),
     Output('dummy4', 'n_clicks'),
@@ -408,6 +412,8 @@ def git_add(value, checked, cwd,d_clk, n_clicks):
             os.system("cd " + str(Path(cwd)) + " && git add " + file)
         return 0, d_clk + 1
     return 0, d_clk
+
+#Restore (git restore) [ modified -> unmodified ]
 @app.callback(
     Output({'type': 'git_button', 'index': 5}, 'n_clicks'),
     Output('dummy5', 'n_clicks'),
@@ -429,6 +435,7 @@ def git_restore(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
+#Unstaged  (git rm --cached) (git restore --staged) [ staged -> modified or untracked ]
 @app.callback(
     Output({'type': 'git_button', 'index': 6}, 'n_clicks'),
     Output('dummy6', 'n_clicks'),
@@ -462,6 +469,8 @@ def git_unstaged(value, checked, cwd, d_clk, n_clicks):
         except:
             return 0, d_clk
     return 0, d_clk
+
+#Untracked (git rm --cached) [ unmodified -> untracked ]
 @app.callback(
     Output({'type': 'git_button', 'index': 7}, 'n_clicks'),
     Output('dummy7', 'n_clicks'),
@@ -483,6 +492,7 @@ def git_untracked(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
+#delete (git rm) [ unmodified -> staged ]
 @app.callback(
     Output({'type': 'git_button', 'index': 8}, 'n_clicks'),
     Output('dummy8', 'n_clicks'),
@@ -505,6 +515,7 @@ def git_delete(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
+#rename
 @app.callback(
     Output({'type': 'git_button', 'index': 9}, 'n_clicks'),
     Output('dummy9', 'n_clicks'),
@@ -526,16 +537,16 @@ def git_rename( checked, cwd, n_clicks, d_clk, value):
         return 0, d_clk + 1
     return 0, d_clk
 
+#commit 버튼 누를 경우 팝업 
 @app.callback(Output('confirm', 'displayed'),
               Output('confirm', 'message'),
-              # Output('confirm', 'submit_n_clicks'),
               Input({'type': 'git_button', 'index': 10}, 'n_clicks'))
 def update_output(n_clicks):
     if n_clicks:
         return True, os.popen("git status").read()
     return False, ''
 
-#git commit -> callback
+#Commit (git commit -m "") [Staged -> Committed]
 @app.callback(
     Output({'type': 'git_button', 'index': 10}, 'n_clicks'),
     Output('dummy10', 'n_clicks'),

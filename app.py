@@ -354,6 +354,9 @@ def git_init(n_clicks, cwd, d_clk):
     Input('cwd', 'children')
 )
 def check(n_clicks, checked, cwd):
+    if not os.path.isdir(cwd):
+        return True, 'file', True, True, True, True, True, True, True, 0
+
     files = sorted(os.listdir(cwd), key=str.lower)
     #if n_clicks is None:
         #raise PreventUpdate

@@ -9,6 +9,8 @@ from dash import ALL, Dash, Input, Output, State, callback_context, dcc, html
 from dash.exceptions import PreventUpdate
 from icons import icons
 import re
+from collections import defaultdict
+
 
 def icon_file(extension, width=24, height=24):
     """Retrun an html.img of the svg icon for a given extension."""
@@ -21,6 +23,23 @@ def icon_file(extension, width=24, height=24):
 
 def nowtimestamp(timestamp, fmt='%b %d, %Y %H:%M'):
     return datetime.datetime.fromtimestamp(timestamp).strftime(fmt)
+
+
+# directory의 status를 return
+# status기준 ==> committed를 제외한 상태를 바탕으로, 개수가 가장 제일 많은 것을 return
+# ex) untracked 3개, modified 2개, staged 1개 --> untracked를 return
+def directory_status(filename):
+    git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
+        'utf-8')
+    data = git_status.split()
+    dic = defaultdict(int)
+    if not data:
+        return 'committed'
+    for i in range(1, len(data), 2):
+        dic[get_git_file_status(data[i])] += 1
+    result = sorted(dic.items(), key=lambda x: -x[1])
+    return result[0][:-1]
+
 
 # git status: 파일 상태를 확인
 def get_git_file_status(filename):
@@ -46,7 +65,8 @@ def get_git_file_status(filename):
         return 'modified'
     else:
         return 'committed'
-    
+
+
 def get_git_status_meaning(filename):
     git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
         'utf-8')
@@ -102,6 +122,7 @@ def get_git_status_meaning(filename):
             meaning.append("ignored")
     return meaning
 
+
 def file_info(path):
     """Get file info for a given path.
 
@@ -126,7 +147,8 @@ def file_info(path):
     }
     return d
 
-#git repository
+
+# git repository
 def is_git_repo(path):
     if not os.path.isdir(path):
         return False
@@ -144,6 +166,7 @@ def is_git_repo(path):
     except:
         return False
 
+
 app = Dash(
     __name__,
     title='Dash File Browser',
@@ -153,66 +176,78 @@ app = Dash(
          'content': """Dash File Browser - a simple browser for files that is \
 used to explore files and folder on the server. This is useful if your users \
 need to manipulate and analyze files on the server."""},
-        ],
+    ],
     external_stylesheets=[dbc.themes.FLATLY])
 
 server = app.server
 
-#button 구현
+# button 구현
 app.layout = html.Div([
-    html.Link(
-        rel="stylesheet",
-        href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css"),
-    html.A(
-        "Fork me on Github",
-        className="github-fork-ribbon",
-        href="https://github.com/eliasdabbas/dash-file-browser",
-        title="Fork me on GitHub", **{"data-ribbon": "Fork me on GitHub"}),
-    html.Br(), html.Br(),
-    dbc.Row([
-        dbc.Col(lg=1, sm=1, md=1),
-        dbc.Col([
-            dcc.Store(id='stored_cwd', data=os.getcwd()),
-            html.H1('Dash File Browser'),
-            html.Hr(), html.Br(), html.Br(), html.Br(),
-            html.H5(html.B(html.A("⬆️ Parent directory", href='#',
-                                  id='parent_dir'))),
-            html.H3([html.Code(os.getcwd(), id='cwd')]),
-                    html.Br(), html.Br(),
-            dbc.Col([html.Button('git init', id={'type': 'git_button', 'index': 1}, n_clicks=0, disabled = False),  # git init button 'gitinit-val'
-                html.Button('not git repo', id={'type': 'git_button', 'index': 2}, disabled=True),  # is git repo button, but disabled 'is_gitrepo'
-                html.Button('check', id={'type': 'git_button', 'index': 3}, value = '', style={"margin-left": "15px"}),  # 'check'
-                html.Button('add', id={'type': 'git_button', 'index': 4},  disabled = True,style={"margin-left": "15px"}),  # 'add'
-                html.Button('restore', id={'type': 'git_button', 'index': 5},  disabled = True,style={"margin-left": "15px"}),  # 'restore'
-                html.Button('unstaged', id={'type': 'git_button', 'index': 6}, n_clicks=0, disabled = True,style={"margin-left": "15px"}),  # 'unstaged'
-                html.Button('untracked', id={'type': 'git_button', 'index': 7},  disabled = True,style={"margin-left": "15px"}),  # 'untracked'
-                html.Button('delete', id={'type': 'git_button', 'index': 8},  disabled = True,style={"margin-left": "15px"}), # 'delete'
-                dcc.Input(id='rename', placeholder = 'Enter a name to replace', debounce=True, value='', type='text',style={"margin-left": "15px"}),
-                dcc.Store(id='store', data={}),
-                html.Button('rename', id={'type': 'git_button', 'index': 9},  disabled = True), # 'rename'
-                dcc.Input(id='commit', placeholder = 'Enter a commit message', debounce=True, value='', type='text',style={"margin-left": "15px"}), # 'commit'
-                html.Button('commit', id={'type': 'git_button', 'index': 10}, disabled= False)
-                     ]),
-            dcc.ConfirmDialog(
-                    id='confirm',
-                    message='Are you sure you want to delete this item?',
-                ),
-                html.Div(id='commit_message'),
+                          html.Link(
+                              rel="stylesheet",
+                              href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css"),
+                          html.A(
+                              "Fork me on Github",
+                              className="github-fork-ribbon",
+                              href="https://github.com/eliasdabbas/dash-file-browser",
+                              title="Fork me on GitHub", **{"data-ribbon": "Fork me on GitHub"}),
+                          html.Br(), html.Br(),
+                          dbc.Row([
+                              dbc.Col(lg=1, sm=1, md=1),
+                              dbc.Col([
+                                  dcc.Store(id='stored_cwd', data=os.getcwd()),
+                                  html.H1('Dash File Browser'),
+                                  html.Hr(), html.Br(), html.Br(), html.Br(),
+                                  html.H5(html.B(html.A("⬆️ Parent directory", href='#',
+                                                        id='parent_dir'))),
+                                  html.H3([html.Code(os.getcwd(), id='cwd')]),
+                                  html.Br(), html.Br(),
+                                  dbc.Col([html.Button('git init', id={'type': 'git_button', 'index': 1}, n_clicks=0,
+                                                       disabled=False),  # git init button 'gitinit-val'
+                                           html.Button('not git repo', id={'type': 'git_button', 'index': 2},
+                                                       disabled=True),  # is git repo button, but disabled 'is_gitrepo'
+                                           html.Button('check', id={'type': 'git_button', 'index': 3}, value='',
+                                                       style={"margin-left": "15px"}),  # 'check'
+                                           html.Button('add', id={'type': 'git_button', 'index': 4}, disabled=True,
+                                                       style={"margin-left": "15px"}),  # 'add'
+                                           html.Button('restore', id={'type': 'git_button', 'index': 5}, disabled=True,
+                                                       style={"margin-left": "15px"}),  # 'restore'
+                                           html.Button('unstaged', id={'type': 'git_button', 'index': 6}, n_clicks=0,
+                                                       disabled=True, style={"margin-left": "15px"}),  # 'unstaged'
+                                           html.Button('untracked', id={'type': 'git_button', 'index': 7},
+                                                       disabled=True, style={"margin-left": "15px"}),  # 'untracked'
+                                           html.Button('delete', id={'type': 'git_button', 'index': 8}, disabled=True,
+                                                       style={"margin-left": "15px"}),  # 'delete'
+                                           dcc.Input(id='rename', placeholder='Enter a name to replace', debounce=True,
+                                                     value='', type='text', style={"margin-left": "15px"}),
+                                           dcc.Store(id='store', data={}),
+                                           html.Button('rename', id={'type': 'git_button', 'index': 9}, disabled=True),
+                                           # 'rename'
+                                           dcc.Input(id='commit', placeholder='Enter a commit message', debounce=True,
+                                                     value='', type='text', style={"margin-left": "15px"}),  # 'commit'
+                                           html.Button('commit', id={'type': 'git_button', 'index': 10}, disabled=False)
+                                           ]),
+                                  dcc.ConfirmDialog(
+                                      id='confirm',
+                                      message='Are you sure you want to delete this item?',
+                                  ),
+                                  html.Div(id='commit_message'),
 
-            html.Div(id='cwd_files',
-                     style={'height': 500, 'overflow': 'scroll'}),
-        ], lg=10, sm=11, md=10)
-    ])
-] + [html.Br() for _ in range(13)] + [html.Div(id='dummy2', n_clicks=0),
-                                      html.Div(id='dummy3', n_clicks=0),
-                                      html.Div(id='dummy4', n_clicks=0),
-                                      html.Div(id='dummy5', n_clicks=0),
-                                      html.Div(id='dummy6', n_clicks=0),
-                                      html.Div(id='dummy7', n_clicks=0),
-                                      html.Div(id='dummy8', n_clicks=0),
-                                      html.Div(id='dummy9', n_clicks=0),
-                                      html.Div(id='dummy10', n_clicks=0)
-                                      ])
+                                  html.Div(id='cwd_files',
+                                           style={'height': 500, 'overflow': 'scroll'}),
+                              ], lg=10, sm=11, md=10)
+                          ])
+                      ] + [html.Br() for _ in range(13)] + [html.Div(id='dummy2', n_clicks=0),
+                                                            html.Div(id='dummy3', n_clicks=0),
+                                                            html.Div(id='dummy4', n_clicks=0),
+                                                            html.Div(id='dummy5', n_clicks=0),
+                                                            html.Div(id='dummy6', n_clicks=0),
+                                                            html.Div(id='dummy7', n_clicks=0),
+                                                            html.Div(id='dummy8', n_clicks=0),
+                                                            html.Div(id='dummy9', n_clicks=0),
+                                                            html.Div(id='dummy10', n_clicks=0)
+                                                            ])
+
 
 @app.callback(
     Output('cwd', 'children'),
@@ -227,7 +262,8 @@ def get_parent_directory(stored_cwd, n_clicks, currentdir):
     parent = Path(currentdir).parent.as_posix()
     return parent
 
-#parent directory를 가져옴
+
+# parent directory를 가져옴
 @app.callback(
     Output('cwd_files', 'children'),
     Input('cwd', 'children'),
@@ -248,14 +284,14 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
             files = sorted(os.listdir(path), key=str.lower)
             for i, file in enumerate(files):
                 filepath = Path(file)
-                full_path=os.path.join(cwd, filepath.as_posix())
+                full_path = os.path.join(cwd, filepath.as_posix())
                 is_dir = Path(full_path).is_dir()
                 link = html.A([
                     html.Span(
-                    file, id={'type': 'listed_file', 'index': i},
-                    title=full_path,
-                    style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
-                )], href='#')
+                        file, id={'type': 'listed_file', 'index': i},
+                        title=full_path,
+                        style={'fontWeight': 'bold', 'fontSize': 18} if is_dir else {}
+                    )], href='#')
                 details = file_info(Path(full_path))
                 details['chbox'] = dmc.Checkbox(id={'type': 'dynamic-checkbox', 'index': i}, checked=False)
                 details['filename'] = link
@@ -266,7 +302,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                 else:
                     details['extension'] = icon_file(details['extension'][1:])
                 all_file_details.append(details)
-        #git repository인 경우
+        # git repository인 경우
         else:
             files = sorted(os.listdir(path), key=str.lower)
             for i, file in enumerate(files):
@@ -283,7 +319,16 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                 details['chbox'] = dmc.Checkbox(id={'type': 'dynamic-checkbox', 'index': i}, checked=False)
                 details['filename'] = link
                 status = get_git_file_status(file)
-                if status == 'untracked':
+
+                #
+                if file == '.git':
+                    details['extension'] = icon_file('.git')
+                elif is_dir:
+                    details['extension'] = html.Img(
+                        src=app.get_asset_url('icons/default_folder.svg'),
+                        width=25, height=25)
+                    details['status'] = directory_status(file)
+                elif status == 'untracked':
                     details['extension'] = icon_file("untracked")
                 elif status == 'staged':
                     details['extension'] = icon_file("staged")
@@ -292,7 +337,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                 elif status == 'committed':
                     details['extension'] = icon_file("committed")
                 elif status == '??':
-                    details['extension'] = icon_file("??")
+                    details['extension'] = icon_file("question")
                     string = ''
                     result = get_git_status_meaning(file)
                     for i in range(len(result)):
@@ -308,7 +353,8 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                                      hover=True, size='sm')
     return html.Div(table)
 
-#클릭한 파일의 이름을 반환
+
+# 클릭한 파일의 이름을 반환
 @app.callback(
     Output('stored_cwd', 'data'),
     Input({'type': 'listed_file', 'index': ALL}, 'n_clicks'),
@@ -320,7 +366,8 @@ def store_clicked_file(n_clicks, title):
     index = ctx.triggered_id['index']
     return title[index]
 
-#git init
+
+# git init
 @app.callback(
     Output('dummy2', "n_clicks"),
     Input({'type': 'git_button', 'index': 1}, 'n_clicks'),
@@ -331,13 +378,14 @@ def git_init(n_clicks, cwd, d_clk):
     if n_clicks == 0:
         raise PreventUpdate
     path = Path(cwd)
-    d_clk=d_clk+1
+    d_clk = d_clk + 1
     if not is_git_repo(path):
         os.system("cd " + str(path)
                   + " && git init")
     return d_clk
 
-#checkbox를 활용해 command할 파일 선택
+
+# checkbox를 활용해 command할 파일 선택
 @app.callback(
     Output({'type': 'git_button', 'index': 1}, 'disabled'),  # git_init
     Output({'type': 'git_button', 'index': 2}, 'children'),  # is_git_repo
@@ -358,8 +406,8 @@ def check(n_clicks, checked, cwd):
         return True, 'file', True, True, True, True, True, True, True, 0
 
     files = sorted(os.listdir(cwd), key=str.lower)
-    #if n_clicks is None:
-        #raise PreventUpdate
+    # if n_clicks is None:
+    # raise PreventUpdate
     update_files = []
     if n_clicks == 1:
         for i in range(len(checked)):
@@ -368,18 +416,18 @@ def check(n_clicks, checked, cwd):
 
     states = [get_git_file_status(i) for i in update_files]
     # d_clk=d_clk+1
-    #path = Path(cwd)
+    # path = Path(cwd)
     is_git = is_git_repo(cwd)
     if is_git == True:
         msg = 'git repo'
     else:
         msg = 'not git repo'
-    #modified --> git add + git restore
+    # modified --> git add + git restore
     if set(states) and set(states).issubset(set(['modified'])):
         return is_git, msg, False, False, True, True, True, True, True, 0
     # update할 파일이 untracked인 경우 or modified인경우 --> git add 가능
     elif set(states) and set(states).issubset(set(['modified', 'untracked'])):
-        return is_git, msg, False, True, True, True, True, True,True, 0
+        return is_git, msg, False, True, True, True, True, True, True, 0
     # git restore
     # unstaged
     elif set(states) and set(states).issubset(set(['staged'])):
@@ -393,7 +441,7 @@ def check(n_clicks, checked, cwd):
     return is_git, msg, True, True, True, True, True, True, True, 0
 
 
-#Add (git add) [ untracked -> staged / modified -> staged ]
+# Add (git add) [ untracked -> staged / modified -> staged ]
 @app.callback(
     Output({'type': 'git_button', 'index': 4}, 'n_clicks'),
     Output('dummy4', 'n_clicks'),
@@ -403,8 +451,7 @@ def check(n_clicks, checked, cwd):
     State('dummy4', 'n_clicks'),
     Input({'type': 'git_button', 'index': 4}, 'n_clicks')
 )
-def git_add(value, checked, cwd,d_clk, n_clicks):
-
+def git_add(value, checked, cwd, d_clk, n_clicks):
     if n_clicks == 1:
         files = sorted(os.listdir(cwd), key=str.lower)
         staged = []
@@ -416,7 +463,8 @@ def git_add(value, checked, cwd,d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
-#Restore (git restore) [ modified -> unmodified ]
+
+# Restore (git restore) [ modified -> unmodified ]
 @app.callback(
     Output({'type': 'git_button', 'index': 5}, 'n_clicks'),
     Output('dummy5', 'n_clicks'),
@@ -438,7 +486,8 @@ def git_restore(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
-#Unstaged  (git rm --cached) (git restore --staged) [ staged -> modified or untracked ]
+
+# Unstaged  (git rm --cached) (git restore --staged) [ staged -> modified or untracked ]
 @app.callback(
     Output({'type': 'git_button', 'index': 6}, 'n_clicks'),
     Output('dummy6', 'n_clicks'),
@@ -449,10 +498,10 @@ def git_restore(value, checked, cwd, d_clk, n_clicks):
     Input({'type': 'git_button', 'index': 6}, 'n_clicks')
 )
 def git_unstaged(value, checked, cwd, d_clk, n_clicks):
-    if n_clicks==1:
+    if n_clicks == 1:
         files = sorted(os.listdir(cwd), key=str.lower)
         staged = []
-        d_clk=d_clk+1
+        d_clk = d_clk + 1
         for i in range(len(checked)):
             if checked[i] == True:
                 staged.append(files[i])
@@ -464,16 +513,17 @@ def git_unstaged(value, checked, cwd, d_clk, n_clicks):
             output = result.stderr.decode('utf-8')
             # git_log = os.popen("git log --pretty=oneline").read()
             if "fatal" in output.lower():
-                    for file in staged:
-                        os.system("cd " + str(Path(cwd)) + " && git rm --cached " + file)
+                for file in staged:
+                    os.system("cd " + str(Path(cwd)) + " && git rm --cached " + file)
             else:
-                    for file in staged:
-                        os.system("cd " + str(Path(cwd)) + " && git restore --staged " + file)
+                for file in staged:
+                    os.system("cd " + str(Path(cwd)) + " && git restore --staged " + file)
         except:
             return 0, d_clk
     return 0, d_clk
 
-#Untracked (git rm --cached) [ unmodified -> untracked ]
+
+# Untracked (git rm --cached) [ unmodified -> untracked ]
 @app.callback(
     Output({'type': 'git_button', 'index': 7}, 'n_clicks'),
     Output('dummy7', 'n_clicks'),
@@ -495,7 +545,8 @@ def git_untracked(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
-#delete (git rm) [ unmodified -> staged ]
+
+# delete (git rm) [ unmodified -> staged ]
 @app.callback(
     Output({'type': 'git_button', 'index': 8}, 'n_clicks'),
     Output('dummy8', 'n_clicks'),
@@ -506,7 +557,6 @@ def git_untracked(value, checked, cwd, d_clk, n_clicks):
     Input({'type': 'git_button', 'index': 8}, 'n_clicks')
 )
 def git_delete(value, checked, cwd, d_clk, n_clicks):
-
     if n_clicks == 1:
         files = sorted(os.listdir(cwd), key=str.lower)
         staged = []
@@ -518,7 +568,8 @@ def git_delete(value, checked, cwd, d_clk, n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
-#rename
+
+# rename
 @app.callback(
     Output({'type': 'git_button', 'index': 9}, 'n_clicks'),
     Output('dummy9', 'n_clicks'),
@@ -528,7 +579,7 @@ def git_delete(value, checked, cwd, d_clk, n_clicks):
     Input({'type': 'git_button', 'index': 9}, 'n_clicks'),
     State('rename', 'value')
 )
-def git_rename( checked, cwd, n_clicks, d_clk, value):
+def git_rename(checked, cwd, n_clicks, d_clk, value):
     if n_clicks:
         index = 0
         for i in range(len(checked)):
@@ -540,7 +591,8 @@ def git_rename( checked, cwd, n_clicks, d_clk, value):
         return 0, d_clk + 1
     return 0, d_clk
 
-#commit 버튼 누를 경우 팝업 
+
+# commit 버튼 누를 경우 팝업
 @app.callback(Output('confirm', 'displayed'),
               Output('confirm', 'message'),
               Input({'type': 'git_button', 'index': 10}, 'n_clicks'))
@@ -549,7 +601,8 @@ def update_output(n_clicks):
         return True, os.popen("git status").read()
     return False, ''
 
-#Commit (git commit -m "") [Staged -> Committed]
+
+# Commit (git commit -m "") [Staged -> Committed]
 @app.callback(
     Output({'type': 'git_button', 'index': 10}, 'n_clicks'),
     Output('dummy10', 'n_clicks'),

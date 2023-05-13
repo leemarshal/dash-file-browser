@@ -47,8 +47,20 @@ def get_git_file_status(filename):
     git_status = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE).stdout.decode(
         'utf-8')
     committed = subprocess.run(['git', 'status', '--porcelain', filename], stdout=subprocess.PIPE)
-    parse = git_status.split()
+    parse = git_status.split('\n')
     if len(parse) >= 3:
+        for p in parse:
+            if len(p) > 0:
+                if p[0:2] == '??':
+                    return '*?'
+                elif p[0:2] == '!!':
+                    return '*!'
+        return '**'
+    elif len(git_status) == 0:
+        return ''
+    else:
+        return git_status[0:2]
+    """if len(parse) >= 3:
         return '??'
     elif git_status.startswith('??'):
         # 파일이 Git 저장소에 추가되지 않았음
@@ -64,7 +76,7 @@ def get_git_file_status(filename):
     elif git_status.startswith(' M'):
         return 'modified'
     else:
-        return 'committed'
+        return 'committed'"""
 
 
 def get_git_status_meaning(filename):
@@ -77,23 +89,24 @@ def get_git_status_meaning(filename):
         status.append(p[:2])
     for s in status:
         if re.match(' [AMD]', s):
-            meaning.append("not updated")
+            meaning.append("not updated")  # not staged
         elif re.match('M[ MTD]', s):
-            meaning.append("updated in index")
+            meaning.append("staged: updated in index")
         elif re.match('T[ MTD]', s):
-            meaning.append("type change in index")
+            meaning.append("staged: type change in index")
         elif re.match('A[ MTD]', s):
-            meaning.append("added to index")
+            meaning.append("staged: added to index")
         elif s == "D ":
-            meaning.append("deleted from index")
+            meaning.append("staged: deleted from index")
         elif re.match('R[ MTD]', s):
-            meaning.append("renamed in index")
+            meaning.append("staged: renamed in index")
         elif re.match('C[ MTD]', s):
-            meaning.append("copied in index")
-        elif re.match('[MTARC] ', s):
+            meaning.append("staged: copied in index")
+
+        if re.match('[MTARC] ', s):
             meaning.append("index and work tree matches")
         elif re.match('[ MTARC]M', s):
-            meaning.append("work tree changed since index")
+            meaning.append("modified in work tree since index")
         elif re.match('[ MTARC]T', s):
             meaning.append("type changed in work tree since index")
         elif re.match('[ MTARC]D', s):
@@ -102,7 +115,8 @@ def get_git_status_meaning(filename):
             meaning.append("renamed in work tree")
         elif s == " C":
             meaning.append("copied in index")
-        elif s == "DD":
+
+        '''if s == "DD":
             meaning.append("unmerged, both deleted")
         elif s == "AU":
             meaning.append("unmerged, added by us")
@@ -116,7 +130,8 @@ def get_git_status_meaning(filename):
             meaning.append("unmerged, both added")
         elif s == "UU":
             meaning.append("unmerged, both modified")
-        elif s == "??":
+            '''
+        if s == "??":
             meaning.append("untracked")
         elif s == "!!":
             meaning.append("ignored")
@@ -328,15 +343,25 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                         src=app.get_asset_url('icons/default_folder.svg'),
                         width=25, height=25)
                     details['status'] = directory_status(file)
-                elif status == 'untracked':
-                    details['extension'] = icon_file("untracked")
-                elif status == 'staged':
-                    details['extension'] = icon_file("staged")
-                elif status == 'modified':
-                    details['extension'] = icon_file("modified")
-                elif status == 'committed':
+                elif status == '':
                     details['extension'] = icon_file("committed")
                 elif status == '??':
+                    details['extension'] = icon_file("untracked")
+                elif status == '!!':
+                    details['extension'] = icon_file("ignored")  #need ignored icons
+                elif status[0] in ['M', 'T', 'A', 'R', 'C']:
+                    details['extension'] = icon_file("staged")
+                    string = ''
+                    result = get_git_status_meaning(file)
+                    for i in range(len(result)):
+                        string += result[i]
+                        if i != len(result) - 1:
+                            string += " && "
+                    details['status'] = string
+                elif status[0] == ' ':  # to implement delete, rename, type change later
+                    if status[1] == 'M':
+                        details['extension'] = icon_file("modified")
+                elif status in ['**', '*?', '*!']:
                     details['extension'] = icon_file("question")
                     string = ''
                     result = get_git_status_meaning(file)
@@ -402,42 +427,60 @@ def git_init(n_clicks, cwd, d_clk):
     Input('cwd', 'children')
 )
 def check(n_clicks, checked, cwd):
+    btn_able = []
     if not os.path.isdir(cwd):
         return True, 'file', True, True, True, True, True, True, True, 0
-
     files = sorted(os.listdir(cwd), key=str.lower)
     # if n_clicks is None:
     # raise PreventUpdate
     update_files = []
-    if n_clicks == 1:
-        for i in range(len(checked)):
-            if checked[i]:
-                update_files.append(files[i])
 
-    states = [get_git_file_status(i) for i in update_files]
-    # d_clk=d_clk+1
-    # path = Path(cwd)
     is_git = is_git_repo(cwd)
     if is_git == True:
         msg = 'git repo'
     else:
         msg = 'not git repo'
-    # modified --> git add + git restore
-    if set(states) and set(states).issubset(set(['modified'])):
-        return is_git, msg, False, False, True, True, True, True, True, 0
-    # update할 파일이 untracked인 경우 or modified인경우 --> git add 가능
-    elif set(states) and set(states).issubset(set(['modified', 'untracked'])):
-        return is_git, msg, False, True, True, True, True, True, True, 0
-    # git restore
-    # unstaged
-    elif set(states) and set(states).issubset(set(['staged'])):
-        return is_git, msg, True, True, False, True, True, True, True, 0
-    # untracked
-    elif set(states) and set(states).issubset(set(['committed'])):
-        if len(states) == 1:  # check 1 -> rename able
-            return is_git, msg, True, True, True, False, False, False, False, 0
-        else:  # multiple check --> rename unable
-            return is_git, msg, True, True, True, False, False, True, True, 0
+
+    if n_clicks == 1:
+        for i in range(len(checked)):
+            if checked[i]:
+                if os.path.isdir(cwd+'/'+files[i]):
+                    return is_git, msg, True, True, True, True, True, True, True, 0
+                update_files.append(files[i])
+
+        if len(update_files) == 0:
+            return is_git, msg, True, True, True, True, True, True, True, 0
+
+        states = [get_git_file_status(i) for i in update_files]
+
+        # committed
+        if set(states) and set(states).issubset(set([''])):
+            if len(states) == 1:  # check 1 -> rename able
+                return is_git, msg, True, True, True, False, False, False, False, 0
+            else:  # multiple check --> rename unable
+                return is_git, msg, True, True, True, False, False, True, True, 0
+
+        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0]
+        flag = 1
+        for s in states:
+            if len(s) == 0:
+                break
+            if s[0] in [' ', '?', '!']:
+                flag = 0
+                break
+        if flag == 1:  # if all checked files are staged
+            btn_able[4] = False
+
+        # modified --> git add + git restore
+        if set(states) and set(states).issubset(set([' M', 'MM', 'TM', 'AM', 'RM', 'CM'])):
+            btn_able[2] = False
+            btn_able[3] = False
+            # return is_git, msg, False, False, True, True, True, True, True, 0
+        # update할 파일이 untracked인 경우 or modified인경우 --> git add 가능
+        elif set(states) and set(states).issubset(set([' M', 'MM', 'TM', 'AM', 'RM', 'CM', '??', '*?'])):
+            btn_able[2] = False
+            # return is_git, msg, False, True, True, True, True, True, True, 0
+        return btn_able
     return is_git, msg, True, True, True, True, True, True, True, 0
 
 

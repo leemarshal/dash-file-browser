@@ -531,7 +531,7 @@ def git_add(value, checked, cwd, d_clk, n_clicks):
             if checked[i] == True:
                 staged.append(files[i])
         for file in staged:
-            os.system("cd " + str(Path(cwd)) + " && git add " + file)
+            os.system("cd " + str(Path(cwd)) + " && git add " + '"' + file + '"')
         return 0, d_clk + 1
     return 0, d_clk
 
@@ -554,7 +554,7 @@ def git_restore(value, checked, cwd, d_clk, n_clicks):
             if checked[i] == True:
                 staged.append(files[i])
         for file in staged:
-            os.system("cd " + str(Path(cwd)) + " && git restore " + file)
+            os.system("cd " + str(Path(cwd)) + " && git restore " + '"' + file + '"')
         return 0, d_clk + 1
     return 0, d_clk
 
@@ -586,10 +586,10 @@ def git_unstaged(value, checked, cwd, d_clk, n_clicks):
             # git_log = os.popen("git log --pretty=oneline").read()
             if "fatal" in output.lower():
                 for file in staged:
-                    os.system("cd " + str(Path(cwd)) + " && git rm --cached " + file)
+                    os.system("cd " + str(Path(cwd)) + " && git rm --cached " + '"' + file + '"')
             else:
                 for file in staged:
-                    os.system("cd " + str(Path(cwd)) + " && git restore --staged " + file)
+                    os.system("cd " + str(Path(cwd)) + " && git restore --staged " + '"' + file + '"')
         except:
             return 0, d_clk
     return 0, d_clk
@@ -613,7 +613,7 @@ def git_untracked(value, checked, cwd, d_clk, n_clicks):
             if checked[i] == True:
                 staged.append(files[i])
         for file in staged:
-            os.system("cd " + str(Path(cwd)) + " && git rm --cached " + file)
+            os.system("cd " + str(Path(cwd)) + " && git rm --cached " + '"' + file + '"')
         return 0, d_clk + 1
     return 0, d_clk
 
@@ -636,7 +636,7 @@ def git_delete(value, checked, cwd, d_clk, n_clicks):
             if checked[i] == True:
                 staged.append(files[i])
         for file in staged:
-            os.system("cd " + str(Path(cwd)) + " && git rm " + file)
+            os.system("cd " + str(Path(cwd)) + " && git rm " + '"' + file + '"')
         return 0, d_clk + 1
     return 0, d_clk
 
@@ -659,7 +659,7 @@ def git_rename(checked, cwd, n_clicks, d_clk, value):
                 index = i
                 break
         files = sorted(os.listdir(cwd), key=str.lower)
-        os.system("cd " + str(Path(cwd)) + " && git mv " + files[index] + " " + value)
+        os.system("cd " + str(Path(cwd)) + " && git mv " + '"' + files[index] + '"' + " " + '"' + value + '"')
         return 0, d_clk + 1
     return 0, d_clk
 

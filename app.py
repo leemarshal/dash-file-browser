@@ -342,7 +342,36 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                     details['extension'] = html.Img(
                         src=app.get_asset_url('icons/default_folder.svg'),
                         width=25, height=25)
-                    details['status'] = directory_status(file)
+                    result = directory_status(file)
+                    result = result[0]
+                    app.logger.info(result)
+                    if result == '':
+                        details['status'] = 'committed'
+                    elif result == '??':
+                        details['status'] = 'untracked'
+                    elif result == '!!':
+                        details['status'] = 'ignored'
+                    elif result[0] in ['M', 'T', 'A', 'R', 'C']:
+                        details['extension'] = icon_file("staged")
+                        string = ''
+                        result1 = get_git_status_meaning(file)
+                        for i in range(len(result1)):
+                            string += result1[i]
+                            if i != len(result1) - 1:
+                                string += " && "
+                        details['status'] = string
+                    elif result[0] == ' ':  # to implement delete, rename, type change later
+                        if result[1] == 'M':
+                            details['extension'] = icon_file("modified")
+                    elif result in ['**', '*?', '*!']:
+                        details['extension'] = icon_file("question")
+                        string = ''
+                        result1 = get_git_status_meaning(file)
+                        for i in range(len(result1)):
+                            string += result1[i]
+                            if i != len(result1) - 1:
+                                string += " && "
+                        details['status'] = string
                 elif status == '':
                     details['extension'] = icon_file("committed")
                 elif status == '??':

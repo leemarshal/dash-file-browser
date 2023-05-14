@@ -1012,5 +1012,8 @@ icons = {
     'staged': 'staged',
     'modified': 'modified',
     'committed': 'committed',
+    'question' : 'question',
+    'ignored' : 'ignored',
     '.git': "git"
+    
  }

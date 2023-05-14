@@ -3,7 +3,7 @@
 ## Open Source SW Project #1 (2023-1)
 
 ## Feature #1: File explorer (file browser)
-The service provides a GUI for browsing files and directories on your computer. 
+### The service provides a GUI for browsing files and directories on your computer. 
 -   The file browsing starts from the root directory of the computer or the most recently visited 
 directory.
 - All files and directories included in the current directory are displayed with their icon, name, 
@@ -52,6 +52,8 @@ current working directory (git init).
 ## Important Notes
 ### __(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__
    check버튼을 누른 뒤, 활성화된 버튼으로만 command해주셔야합니다! 
+
+![](How_to_use_service.gif)
 
 - Programming language: Python과 dash 프레임워크를 사용
 - Platform to run: Web

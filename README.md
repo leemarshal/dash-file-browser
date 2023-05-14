@@ -69,6 +69,12 @@ A simple file browser for Plotly Dash applications.
 ## To run: 
 
 ```bash
+(만약 python이나 pip가 install 안돼있다면, pip와 python을 설치해야합니다)
+-ubuntu기준 python, pip 설치
+sudo apt install python3
+sudo apt install pip
+  (혹여나 이 명령어도 실행되지 않는다면,, sudo apt update를 실행하고 다시 설치)
+
 pip install -r requirements.txt
 python app.py
 

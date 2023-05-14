@@ -51,6 +51,7 @@ current working directory (git init).
 
 ## Important Notes
 ### __(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__
+   check버튼을 누른 뒤, 활성화된 버튼으로만 command해주셔야합니다! 
 
 - Programming language: Python과 dash 프레임워크를 사용
 - Platform to run: Web

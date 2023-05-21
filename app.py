@@ -217,6 +217,71 @@ app.layout = html.Div([
                                                         id='parent_dir'))),
                                   html.H3([html.Code(os.getcwd(), id='cwd')]),
                                   html.Br(), html.Br(),
+                                  dbc.Col([html.Button('git clone', id='git_clone', n_clicks=0),
+                                           dbc.Modal(
+                                               id='modal_clone',
+                                               size='lg',
+                                               children=[
+                                                   html.Div(
+                                                       className='modal-content',
+                                                       children=[
+                                                           html.H4('Modal Content'),
+                                                           html.P('This is the content of the modal.'),
+                                                           dcc.RadioItems(
+                                                               id='visibility',
+                                                               options=[
+                                                                   {'label': 'Public', 'value': 'public'},
+                                                                   {'label': 'Private', 'value': 'private'}
+                                                               ],
+                                                               value='public', inline=True,
+                                                               labelStyle={'display': 'inline-block',
+                                                                           'margin-right': '10px'}
+                                                           ),
+                                                           dcc.Input(
+                                                               id='git_repo_url',
+                                                               placeholder="Paste your Github repo url",
+                                                               type="text",
+                                                               style={'margin-bottom': '5px', 'margin-top': '5px',
+                                                                      'margin-left': '10px', 'margin-right': '10px'}
+                                                           ),
+                                                           dcc.Input(
+                                                               id='git_id',
+                                                               placeholder="Enter your ID",
+                                                               type="text",
+                                                               disabled=True,
+                                                               style={'margin-bottom': '5px', 'margin-top': '5px',
+                                                                      'margin-left': '10px', 'margin-right': '10px'}
+                                                           ),
+                                                           dcc.Input(
+                                                               id='git_token',
+                                                               placeholder="Paste your Github token",
+                                                               type="text",
+                                                               disabled=True,
+                                                               style={'margin-bottom': '5px', 'margin-top': '5px',
+                                                                      'margin-left': '10px', 'margin-right': '10px'}
+                                                           ),
+                                                           dbc.Col([
+                                                               dbc.Button(
+                                                                   'Clone', id='do_clone',
+                                                                   n_clicks=0,
+                                                                   color='primary',
+                                                                   style={'font-size': '16px', 'margin-left': '75%',
+                                                                          'margin-bottom': '5px',
+                                                                          'width': '90px', 'height': '40px'}
+                                                               ),
+                                                               dbc.Button(
+                                                                   'Close', id='close_clone',
+                                                                   n_clicks=0,
+                                                                   color='secondary',
+                                                                   style={'font-size': '16px', 'margin-left': '10px',
+                                                                          'margin-bottom': '5px',
+                                                                          'width': '90px', 'height': '40px'}
+                                                               )])
+                                                       ]
+                                                   )
+                                               ]
+                                           )]),
+                                  html.Br(),
                                   dbc.Col([html.Button('git init', id={'type': 'git_button', 'index': 1}, n_clicks=0,
                                                        disabled=False),  # git init button 'gitinit-val'
                                            html.Button('not git repo', id={'type': 'git_button', 'index': 2},
@@ -260,7 +325,8 @@ app.layout = html.Div([
                                                             html.Div(id='dummy7', n_clicks=0),
                                                             html.Div(id='dummy8', n_clicks=0),
                                                             html.Div(id='dummy9', n_clicks=0),
-                                                            html.Div(id='dummy10', n_clicks=0)
+                                                            html.Div(id='dummy10', n_clicks=0),
+                                                            html.Div(id='dummy13', n_clicks=0)
                                                             ])
 
 
@@ -289,9 +355,10 @@ def get_parent_directory(stored_cwd, n_clicks, currentdir):
     Input('dummy7', "n_clicks"),
     Input('dummy8', "n_clicks"),
     Input('dummy9', "n_clicks"),
-    Input('dummy10', "n_clicks")
+    Input('dummy10', "n_clicks"),
+    Input('dummy13', "n_clicks")
 )
-def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, clk_d10):
+def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, clk_d10, clk_d13):
     path = Path(cwd)
     all_file_details = []
     if path.is_dir():
@@ -344,7 +411,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                         width=25, height=25)
                     result = directory_status(file)
                     result = result[0]
-                    app.logger.info(result)
+                    # app.logger.info(result)
                     if result == '':
                         details['status'] = 'committed'
                     elif result == '??':
@@ -689,6 +756,69 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
         os.system("cd " + str(Path(cwd)) + " && git commit -m \"" + value + "\"")
         return 0, d_clk + 1
     return 0, d_clk
+
+
+@app.callback(
+    Output('modal_clone', 'is_open'),
+    Input('git_clone', 'n_clicks'),
+    Input('do_clone', 'n_clicks'),
+    Input('close_clone', 'n_clicks'),
+    [State('modal_clone', 'is_open')]
+)
+def toggle_clone_modal(open_clicks, do_clicks, close_clicks, is_open):
+    if open_clicks or do_clicks or close_clicks:
+        return not is_open
+    return is_open
+
+@app.callback(
+    Output('git_id', 'disabled'),
+    Output('git_token', 'disabled'),
+    Output('dummy13', 'n_clicks'),
+    Input('visibility', 'value'),
+    Input('do_clone', 'n_clicks'),
+    State('git_repo_url', 'value'),
+    State('git_id', 'value'),
+    State('git_token', 'value'),
+    State('cwd', 'children'),
+    State('dummy13', 'n_clicks')
+)
+def git_clone(visibility, do_clk, url, id, token, cwd, clk_d13):
+    disabled_id = True
+    disabled_token = True
+    os.system('cd ' + str(Path(cwd)))
+    if visibility == 'public':
+        disabled_id = True
+        disabled_token = True
+        if do_clk == 1:
+            try:
+                # Run the 'git clone' command
+                command = ['git', 'clone', url]
+                subprocess.run(command, check=True)
+                print("Clone successful!")
+                clk_d13 += 1
+            except subprocess.CalledProcessError as e:
+                if e.returncode == 128:
+                    print("Repository does not exist.")
+                else:
+                    print("An error occurred while cloning the repository:", str(e))
+    else:
+        disabled_id = False
+        disabled_token = False
+        if do_clk == 1:
+            try:
+                # Run the 'git clone' command
+                # https://<username>:<password_or_token>@github.com/<owner>/<repo>.git
+                url = 'https://' + id + ':' + token + '@' + url
+                command = ['git', 'clone', url]
+                subprocess.run(command, check=True)
+                print("Clone successful!")
+                clk_d13 += 1
+            except subprocess.CalledProcessError as e:
+                if e.returncode == 128:
+                    print("Repository does not exist.")
+                else:
+                    print("An error occurred while cloning the repository:", str(e))
+    return disabled_id, disabled_token, clk_d13
 
 
 if __name__ == '__main__':

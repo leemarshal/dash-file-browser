@@ -501,8 +501,7 @@ def git_init(n_clicks, cwd, d_clk):
     path = Path(cwd)
     d_clk = d_clk + 1
     if not is_git_repo(path):
-        os.system("cd " + str(path)
-                  + " && git init")
+        os.system("cd " + str(path) + " && git init")
     return d_clk
 
 
@@ -774,6 +773,7 @@ def toggle_clone_modal(open_clicks, do_clicks, close_clicks, is_open):
     Output('git_id', 'disabled'),
     Output('git_token', 'disabled'),
     Output('dummy13', 'n_clicks'),
+    Output('do_clone', 'n_clicks'),
     Input('visibility', 'value'),
     Input('do_clone', 'n_clicks'),
     State('git_repo_url', 'value'),
@@ -818,7 +818,7 @@ def git_clone(visibility, do_clk, url, id, token, cwd, clk_d13):
                     print("Repository does not exist.")
                 else:
                     print("An error occurred while cloning the repository:", str(e))
-    return disabled_id, disabled_token, clk_d13
+    return disabled_id, disabled_token, clk_d13, 0
 
 
 if __name__ == '__main__':

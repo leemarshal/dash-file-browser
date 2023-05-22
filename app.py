@@ -690,6 +690,15 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
+def find_branch():
+    result = os.popen("git branch").read()
+    result1 = os.popen("git branch -r").read()
+    local, remote = [], []
+    local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and i]
+    if result1:
+        remote = [i.strip() for i in result1.split('\n') if "->" not in i and i]
+
+    return local + remote
 
 if __name__ == '__main__':
     app.run_server(debug=True)

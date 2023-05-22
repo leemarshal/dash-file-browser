@@ -783,7 +783,33 @@ def toggle_popup(open_clicks, close_clicks, is_open, b1, b2, b3, b4):
         branch = find_branch()
         return True, branch, 0, 0
     return False, [], 0, 0
-
+@app.callback(
+    Output('dummy11', 'n_clicks'),
+    Output('b2', 'n_clicks'),
+    Output('checkout_popup', 'is_open'),
+    Output('checkout_popup', 'children'),
+    Input('checkout_branch', 'n_clicks'),
+    State('branch_dropdown', 'value'),
+    State('cwd', 'children'),
+    State('dummy11', 'n_clicks'),
+    State('b2', 'n_clicks'),
+)
+def checkout_branch(click, value, cwd, d_clk, b2):
+    if value:
+        if value[0] == "*":
+            value = value[1:].strip()
+        app.logger.info(value)
+        os.system('cd ' + str(Path(cwd)))
+        command = ["git", "checkout", value]
+        data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+        if not str(data.stderr):
+            data = data.stdout
+        else:
+            data = data.stderr
+        if not data:    
+            data = 'checkout branch to ' + value
+        return d_clk + 1, b2 + 1, True, str(data)
+    return d_clk, b2, False, []
 
 if __name__ == '__main__':
     app.run_server(debug=True)

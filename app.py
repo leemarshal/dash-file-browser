@@ -784,30 +784,6 @@ def toggle_popup(open_clicks, close_clicks, is_open, b1, b2, b3, b4):
         return True, branch, 0, 0
     return False, [], 0, 0
 
-@app.callback(
-    Output('b3', 'n_clicks'),
-    Output('create_popup', 'is_open'),
-    Output('create_popup', 'children'),
-    Input('create_branch', 'n_clicks'),
-    State('branch_name', 'value'),
-    State('cwd', 'children'),
-    State('b3', 'n_clicks'),
-)
-def create_branch(click, value, cwd, b3):
-    if value:
-        os.system('cd ' + str(Path(cwd)))
-        command = ["git", "branch", value]
-
-        data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-        app.logger.info(data)
-        if not str(data.stderr):
-            data = data.stdout
-        else:
-            data = data.stderr
-        if not data:
-            data = 'create branch ' + value
-        return b3 + 1, True, str(data)
-    return b3, False, ''
 
 
 @app.callback(
@@ -835,6 +811,73 @@ def delete_branch(click, value, cwd, b1):
         return b1 + 1, True, str(data)
     return b1, False, ''
 
+
+def find_branch():
+    result = os.popen("git branch").read()
+    result1 = os.popen("git branch -r").read()
+    local, remote = [], []
+    local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and i]
+    if result1:
+        remote = [i.strip() for i in result1.split('\n') if "->" not in i and i]
+
+    return local + remote
+
+
+@app.callback(
+    Output('dummy11', 'n_clicks'),
+    Output('b2', 'n_clicks'),
+    Output('checkout_popup', 'is_open'),
+    Output('checkout_popup', 'children'),
+    Input('checkout_branch', 'n_clicks'),
+    State('branch_dropdown', 'value'),
+    State('cwd', 'children'),
+    State('dummy11', 'n_clicks'),
+    State('b2', 'n_clicks'),
+)
+def checkout_branch(click, value, cwd, d_clk, b2):
+    if value:
+        if value[0] == "*":
+            value = value[1:].strip()
+        app.logger.info(value)
+        os.system('cd ' + str(Path(cwd)))
+        command = ["git", "checkout", value]
+        data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+        if not str(data.stderr):
+            data = data.stdout
+        else:
+            data = data.stderr
+        if not data:
+            data = 'checkout branch to ' + value
+        return d_clk + 1, b2 + 1, True, str(data)
+    return d_clk, b2, False, []
+
+
+@app.callback(
+    Output('b3', 'n_clicks'),
+    Output('create_popup', 'is_open'),
+    Output('create_popup', 'children'),
+    Input('create_branch', 'n_clicks'),
+    State('branch_name', 'value'),
+    State('cwd', 'children'),
+    State('b3', 'n_clicks'),
+)
+def create_branch(click, value, cwd, b3):
+    if value:
+        os.system('cd ' + str(Path(cwd)))
+        command = ["git", "branch", value]
+
+        data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+        app.logger.info(data)
+        if not str(data.stderr):
+            data = data.stdout
+        else:
+            data = data.stderr
+        if not data:
+            data = 'create branch ' + value
+        return b3 + 1, True, str(data)
+    return b3, False, ''
+
+
 @app.callback(
     Output('b4', 'n_clicks'),
     Output('rename_popup', 'is_open'),
@@ -859,6 +902,7 @@ def rename_branch(click, old, new, cwd, b4):
             data = 'rename branch ' + old + ' to ' + new
         return b4 + 1, True, str(data)
     return b4, False, ''
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

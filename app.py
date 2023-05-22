@@ -195,6 +195,13 @@ need to manipulate and analyze files on the server."""},
     external_stylesheets=[dbc.themes.FLATLY])
 
 server = app.server
+modal_style = {
+    'width': '500px',
+    'position': 'fixed',
+    'top': '50%',
+    'left': '50%',
+    'transform': 'translate(-50%, -50%)'
+}
 
 # button 구현
 app.layout = html.Div([
@@ -207,6 +214,53 @@ app.layout = html.Div([
                               href="https://github.com/eliasdabbas/dash-file-browser",
                               title="Fork me on GitHub", **{"data-ribbon": "Fork me on GitHub"}),
                           html.Br(), html.Br(),
+                          html.Button('branch', id='open-popup-button'),
+                          dbc.Modal(
+                              id='popup',
+                              style=modal_style,
+                              children=[
+                                  html.Div('Branch Action'),
+                                  dbc.Row([dcc.Input(id='branch_name',
+                                                     style={'width': '200px', 'margin-left': 'True'},
+                                                     placeholder="input branch name"),
+                                           dcc.Dropdown(
+                                               id='branch_dropdown',
+                                               style={'width': '200px', 'margin-left': 'auto'},
+                                               options=[]), ]),
+                                  dbc.Row(
+                                      dbc.Col(
+                                          [
+                                              html.Button('rename', id='rename_branch', n_clicks=0),
+                                              html.Button('create', id='create_branch', n_clicks=0),
+                                              html.Button('delete', id='delete_branch', n_clicks=0),
+                                              html.Button('checkout', id='checkout_branch', n_clicks=0),
+                                          ],
+                                          className='d-flex justify-content-center align-items-center',  # 중앙 정렬
+                                      ),
+                                      justify='center',  # 가로 정렬
+                                  ),
+                                  html.Button('close', id='close-popup-button', ), ]),
+
+                          html.Button('branch_merge', id='open-popup-button-2'),
+                          dbc.Modal(
+                              id='popup-2',
+                              children=[
+                                  html.Div('Branch Merge'),
+                                  html.Div(id='current_branch',
+                                           style={'margin-top': '10px', 'marginLeft': '20px', 'fontSize': '18px'}),
+                                  html.Div('✡ Merge할 branch', style={'display': 'inline-block', 'margin-right': '10px',
+                                                                     'marginLeft': '20px', 'fontSize': '18px'}),
+                                  dcc.Dropdown(
+                                      id='branch_dropdown-2',
+                                      style={'width': '200px', 'marginLeft': '10px'},
+                                  ),
+                                  html.Div([
+                                      html.Button('Merge', id='merge_branch', n_clicks=0, style={'width': '100%'}),
+                                      html.Button('close', id='close-popup-button-2', style={'width': '100%'})
+                                  ], style={'display': 'flex', 'justify-content': 'space-between', 'margin': '20px 0'})
+                              ]
+                          ),
+
                           dbc.Row([
                               dbc.Col(lg=1, sm=1, md=1),
                               dbc.Col([
@@ -260,7 +314,18 @@ app.layout = html.Div([
                                                             html.Div(id='dummy7', n_clicks=0),
                                                             html.Div(id='dummy8', n_clicks=0),
                                                             html.Div(id='dummy9', n_clicks=0),
-                                                            html.Div(id='dummy10', n_clicks=0)
+                                                            html.Div(id='dummy10', n_clicks=0),
+                                                            html.Div(id='b1', n_clicks=0),  # delete용
+                                                            dbc.Modal(id='delete_popup', children=[], ),
+                                                            html.Div(id='b2', n_clicks=0),  # checkout용
+                                                            dbc.Modal(id='checkout_popup', children=[], ),
+                                                            html.Div(id='dummy11', n_clicks=0),
+                                                            html.Div(id='b3', n_clicks=0),  # checkout용
+                                                            dbc.Modal(id='create_popup', children=[], ),
+                                                            html.Div(id='b4', n_clicks=0),  # checkout용
+                                                            dbc.Modal(id='rename_popup', children=[], ),
+                                                            html.Div(id='m1', n_clicks=0),  # merge용
+                                                            dbc.Modal(id='merge_popup', children=[], ),
                                                             ])
 
 
@@ -699,6 +764,26 @@ def find_branch():
         remote = [i.strip() for i in result1.split('\n') if "->" not in i and i]
 
     return local + remote
+
+@app.callback(
+    Output('popup', 'is_open'),
+    Output('branch_dropdown', 'options'),
+    Output('open-popup-button', 'n_clicks'),
+    Output('close-popup-button', 'n_clicks'),
+    Input('open-popup-button', 'n_clicks'),
+    Input('close-popup-button', 'n_clicks'),
+    Input('b1', 'n_clicks'),
+    Input('b2', 'n_clicks'),
+    Input('b3', 'n_clicks'),
+    Input('b4', 'n_clicks'),
+    State('popup', 'is_open')
+)  # 오픈용..
+def toggle_popup(open_clicks, close_clicks, is_open, b1, b2, b3, b4):
+    if open_clicks:
+        branch = find_branch()
+        return True, branch, 0, 0
+    return False, [], 0, 0
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

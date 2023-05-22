@@ -809,5 +809,33 @@ def create_branch(click, value, cwd, b3):
         return b3 + 1, True, str(data)
     return b3, False, ''
 
+
+@app.callback(
+    Output('b1', 'n_clicks'),
+    Output('delete_popup', 'is_open'),
+    Output('delete_popup', 'children'),
+    Input('delete_branch', 'n_clicks'),
+    State('branch_dropdown', 'value'),
+    State('cwd', 'children'),
+    State('b1', 'n_clicks'),
+)
+def delete_branch(click, value, cwd, b1):
+    if value:
+        if value[0] == "*":
+            value = value[1:].strip()
+        os.system('cd ' + str(Path(cwd)))
+        command = ["git", "branch", "-d", value]
+        data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+        if not str(data.stderr):
+            data = data.stdout
+        else:
+            data = data.stderr
+        if not data:
+            data = 'delete branch ' + value
+        return b1 + 1, True, str(data)
+    return b1, False, ''
+
+
+
 if __name__ == '__main__':
     app.run_server(debug=True)

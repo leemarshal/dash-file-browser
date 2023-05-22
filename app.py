@@ -784,6 +784,30 @@ def toggle_popup(open_clicks, close_clicks, is_open, b1, b2, b3, b4):
         return True, branch, 0, 0
     return False, [], 0, 0
 
+@app.callback(
+    Output('b3', 'n_clicks'),
+    Output('create_popup', 'is_open'),
+    Output('create_popup', 'children'),
+    Input('create_branch', 'n_clicks'),
+    State('branch_name', 'value'),
+    State('cwd', 'children'),
+    State('b3', 'n_clicks'),
+)
+def create_branch(click, value, cwd, b3):
+    if value:
+        os.system('cd ' + str(Path(cwd)))
+        command = ["git", "branch", value]
+
+        data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+        app.logger.info(data)
+        if not str(data.stderr):
+            data = data.stdout
+        else:
+            data = data.stderr
+        if not data:
+            data = 'create branch ' + value
+        return b3 + 1, True, str(data)
+    return b3, False, ''
 
 if __name__ == '__main__':
     app.run_server(debug=True)

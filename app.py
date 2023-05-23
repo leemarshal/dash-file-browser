@@ -846,5 +846,29 @@ def toggle_popup_2(open_clicks, close_clicks, m1_clicks, is_open):
         return True, branch, 0, 0, f"✡ 현재 Branch: {current_branch}"
     return False, [], 0, 0, ""  
 
+@app.callback(
+    Output('m1', 'n_clicks'),
+    Output('merge_popup', 'is_open'),
+    Output('merge_popup', 'children'),
+    Input('merge_branch', 'n_clicks'),
+    State('branch_dropdown-2', 'value'),
+    State('cwd', 'children'),
+    State('m1', 'n_clicks')
+)
+def merge_branch(click, value, cwd, m1_clicks):
+    if click is not None and click > 0:
+        if value:
+            if value[0] == "*":
+                value = value[1:].strip()
+            os.system('cd ' + str(Path(cwd)))
+            command = ["git", "merge", value]
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                return m1_clicks + 1, True, 'Merge successful'
+            else:
+                error_message = result.stderr.decode()
+                return m1_clicks, True, error_message
+    return m1_clicks, False, ''
+
 if __name__ == '__main__':
     app.run_server(debug=True)

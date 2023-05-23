@@ -851,7 +851,6 @@ def checkout_branch(click, value, cwd, d_clk, b2):
         return d_clk + 1, b2 + 1, True, str(data)
     return d_clk, b2, False, []
 
-
 @app.callback(
     Output('b3', 'n_clicks'),
     Output('create_popup', 'is_open'),
@@ -876,7 +875,6 @@ def create_branch(click, value, cwd, b3):
             data = 'create branch ' + value
         return b3 + 1, True, str(data)
     return b3, False, ''
-
 
 @app.callback(
     Output('b4', 'n_clicks'),
@@ -903,6 +901,64 @@ def rename_branch(click, old, new, cwd, b4):
         return b4 + 1, True, str(data)
     return b4, False, ''
 
+def find_branch_merge():
+    result = os.popen("git branch").read()
+    result1 = os.popen("git branch -r").read()
+    local, remote = [], []
+    local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and not i.startswith("*")and i.strip()]
+    if result1:
+        remote = [i.strip() for i in result1.split('\n') if "->" not in i and not i.startswith("*")and i.strip()]
+
+    return local + remote
+
+def get_current_branch():
+    try:
+        result = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+        return result
+    except subprocess.CalledProcessError:
+        return None
+    
+@app.callback(
+    Output('popup-2', 'is_open'),
+    Output('branch_dropdown-2', 'options'),
+    Output('open-popup-button-2', 'n_clicks'),
+    Output('close-popup-button-2', 'n_clicks'),
+    Output('current_branch', 'children'),
+    Input('open-popup-button-2', 'n_clicks'),
+    Input('close-popup-button-2', 'n_clicks'),
+    Input('m1', 'n_clicks'),
+    State('popup-2', 'is_open')
+)
+def toggle_popup_2(open_clicks, close_clicks, m1_clicks, is_open):
+    if open_clicks:
+        branch = find_branch_merge()
+        current_branch = get_current_branch()  
+        return True, branch, 0, 0, f"✡ 현재 Branch: {current_branch}"
+    return False, [], 0, 0, ""  
+
+@app.callback(
+    Output('m1', 'n_clicks'),
+    Output('merge_popup', 'is_open'),
+    Output('merge_popup', 'children'),
+    Input('merge_branch', 'n_clicks'),
+    State('branch_dropdown-2', 'value'),
+    State('cwd', 'children'),
+    State('m1', 'n_clicks')
+)
+def merge_branch(click, value, cwd, m1_clicks):
+    if click is not None and click > 0:
+        if value:
+            if value[0] == "*":
+                value = value[1:].strip()
+            os.system('cd ' + str(Path(cwd)))
+            command = ["git", "merge", value]
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                return m1_clicks + 1, True, 'Merge successful'
+            else:
+                error_message = result.stderr.decode()
+                return m1_clicks, True, error_message
+    return m1_clicks, False, ''
 
 if __name__ == '__main__':
     app.run_server(debug=True)

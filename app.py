@@ -811,5 +811,15 @@ def checkout_branch(click, value, cwd, d_clk, b2):
         return d_clk + 1, b2 + 1, True, str(data)
     return d_clk, b2, False, []
 
+def find_branch_merge():
+    result = os.popen("git branch").read()
+    result1 = os.popen("git branch -r").read()
+    local, remote = [], []
+    local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and not i.startswith("*")and i.strip()]
+    if result1:
+        remote = [i.strip() for i in result1.split('\n') if "->" not in i and not i.startswith("*")and i.strip()]
+
+    return local + remote
+
 if __name__ == '__main__':
     app.run_server(debug=True)

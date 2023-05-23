@@ -828,5 +828,12 @@ def get_current_branch():
     except subprocess.CalledProcessError:
         return None
     
+def toggle_popup_2(open_clicks, close_clicks, m1_clicks, is_open):
+    if open_clicks:
+        branch = find_branch_merge()
+        current_branch = get_current_branch()  
+        return True, branch, 0, 0, f"✡ 현재 Branch: {current_branch}"
+    return False, [], 0, 0, ""  
+
 if __name__ == '__main__':
     app.run_server(debug=True)

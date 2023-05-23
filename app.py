@@ -821,5 +821,12 @@ def find_branch_merge():
 
     return local + remote
 
+def get_current_branch():
+    try:
+        result = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+        return result
+    except subprocess.CalledProcessError:
+        return None
+    
 if __name__ == '__main__':
     app.run_server(debug=True)

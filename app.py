@@ -828,6 +828,17 @@ def get_current_branch():
     except subprocess.CalledProcessError:
         return None
     
+@app.callback(
+    Output('popup-2', 'is_open'),
+    Output('branch_dropdown-2', 'options'),
+    Output('open-popup-button-2', 'n_clicks'),
+    Output('close-popup-button-2', 'n_clicks'),
+    Output('current_branch', 'children'),
+    Input('open-popup-button-2', 'n_clicks'),
+    Input('close-popup-button-2', 'n_clicks'),
+    Input('m1', 'n_clicks'),
+    State('popup-2', 'is_open')
+)
 def toggle_popup_2(open_clicks, close_clicks, m1_clicks, is_open):
     if open_clicks:
         branch = find_branch_merge()

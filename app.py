@@ -966,12 +966,28 @@ def merge_branch(click, value, cwd, m1_clicks, d_clk):
                 return m1_clicks + 1, True, result.stderr, d_clk + 1
     return m1_clicks, False, '', d_clk
 
+##주어진 커밋의 자세한 정보를 반환하는 함수
+##%an은 작성자 이름, %ad는 작성일자, %s는 커밋 메시지
+def get_commit_info(commit):
+    command = ['git', 'show', '--no-patch', '--format="%an%n%ad%n%s"', commit]
+    commit_info = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
+    return commit_info
+
+#커밋 정보를 표시하기 위한 새로운 창을 생성하고 정보를 텍스트 레이블로 표시
+def show_commit_info(root, commit_info):
+    info_window = tk.Toplevel(root)
+    info_window.title("Commit Information")
+
+    info_label = tk.Label(info_window, text=commit_info, justify=tk.LEFT)
+    info_label.pack()
+def node_clicked(root, node):
+    commit_info = get_commit_info(node)
+    show_commit_info(root, commit_info)
 
 @app.callback(
     Output('commit_graph', 'n_clicks'),
     Input('commit_graph', 'n_clicks'),
     State('cwd', 'children'),
-
 )
 def commit_graph(n_clicks, cwd):
     if n_clicks:
@@ -1010,9 +1026,15 @@ def commit_graph(n_clicks, cwd):
         for x, y in location.keys():
             rectangle = canvas.create_rectangle(y, x, y + 50, x + 50, fill='white')  # 사각형 생성
             rectangles[location[(x, y)]] = rectangle  # 사각형을 저장
+            canvas.tag_bind(rectangle, '<Button-1>',
+                            lambda event, node=location[(x, y)]: node_clicked(root, node))  # 클릭 이벤트 바인딩
             text = location[(x, y)][:6]  # 사각형에 표시할 텍스트
             canvas.create_text(y + 25, x + 25, text=text)  # 사각형 중앙에 텍스트 그리기
             # 작성자 이름과 메시지 표시
+            commit_info = get_commit_info(location[(x, y)])
+            author, date, message = commit_info.strip().split('\n')
+            info_text = f'{author}\n{message}'
+            canvas.create_text(y + 75, x + 25, text=info_text, anchor='w')
         # 화살표 그리기
         for x, y in location.keys():
             node = location[(x, y)]
@@ -1025,7 +1047,6 @@ def commit_graph(n_clicks, cwd):
 
         root.mainloop()
     return 0
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)

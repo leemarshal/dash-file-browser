@@ -10,6 +10,7 @@ from dash.exceptions import PreventUpdate
 from icons import icons
 import re
 from collections import defaultdict
+import tkinter as tk
 
 
 def icon_file(extension, width=24, height=24):
@@ -202,6 +203,7 @@ modal_style = {
     'left': '50%',
     'transform': 'translate(-50%, -50%)'
 }
+branch = []
 
 # button 구현
 app.layout = html.Div([
@@ -215,6 +217,7 @@ app.layout = html.Div([
                               title="Fork me on GitHub", **{"data-ribbon": "Fork me on GitHub"}),
                           html.Br(), html.Br(),
                           html.Button('branch', id='open-popup-button'),
+                          html.Button('Commit Graph', id='commit_graph'),
                           dbc.Modal(
                               id='popup',
                               style=modal_style,
@@ -240,7 +243,6 @@ app.layout = html.Div([
                                       justify='center',  # 가로 정렬
                                   ),
                                   html.Button('close', id='close-popup-button', ), ]),
-
                           html.Button('branch_merge', id='open-popup-button-2'),
                           dbc.Modal(
                               id='popup-2',
@@ -326,6 +328,7 @@ app.layout = html.Div([
                                                             dbc.Modal(id='rename_popup', children=[], ),
                                                             html.Div(id='m1', n_clicks=0),  # merge용
                                                             dbc.Modal(id='merge_popup', children=[], ),
+                                                            html.Div(id='dummy12', n_clicks=0),
                                                             ])
 
 
@@ -354,9 +357,11 @@ def get_parent_directory(stored_cwd, n_clicks, currentdir):
     Input('dummy7', "n_clicks"),
     Input('dummy8', "n_clicks"),
     Input('dummy9', "n_clicks"),
-    Input('dummy10', "n_clicks")
+    Input('dummy10', "n_clicks"),
+    Input('dummy11', 'n_clicks'),
+    Input('dummy12', 'n_clicks'),
 )
-def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, clk_d10):
+def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, clk_d10, clk_d11, clk_d12):
     path = Path(cwd)
     all_file_details = []
     if path.is_dir():
@@ -409,7 +414,6 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                         width=25, height=25)
                     result = directory_status(file)
                     result = result[0]
-                    app.logger.info(result)
                     if result == '':
                         details['status'] = 'committed'
                     elif result == '??':
@@ -432,9 +436,9 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                         details['extension'] = icon_file("question")
                         string = ''
                         result1 = get_git_status_meaning(file)
-                        for i in range(len(result1)):
+                        for j in range(len(result1)):
                             string += result1[i]
-                            if i != len(result1) - 1:
+                            if j != len(result1) - 1:
                                 string += " && "
                         details['status'] = string
                 elif status == '':
@@ -442,14 +446,14 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                 elif status == '??':
                     details['extension'] = icon_file("untracked")
                 elif status == '!!':
-                    details['extension'] = icon_file("ignored")  #need ignored icons
+                    details['extension'] = icon_file("ignored")  # need ignored icons
                 elif status[0] in ['M', 'T', 'A', 'R', 'C']:
                     details['extension'] = icon_file("staged")
                     string = ''
                     result = get_git_status_meaning(file)
-                    for i in range(len(result)):
+                    for j in range(len(result)):
                         string += result[i]
-                        if i != len(result) - 1:
+                        if j != len(result) - 1:
                             string += " && "
                     details['status'] = string
                 elif status[0] == ' ':  # to implement delete, rename, type change later
@@ -459,9 +463,9 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                     details['extension'] = icon_file("question")
                     string = ''
                     result = get_git_status_meaning(file)
-                    for i in range(len(result)):
+                    for j in range(len(result)):
                         string += result[i]
-                        if i != len(result) - 1:
+                        if j != len(result) - 1:
                             string += " && "
                     details['status'] = string
                 all_file_details.append(details)
@@ -516,6 +520,8 @@ def git_init(n_clicks, cwd, d_clk):
     Output('rename', 'disabled'),
     Output({'type': 'git_button', 'index': 9}, 'disabled'),  # git_rename
     Output({'type': 'git_button', 'index': 3}, 'n_clicks'),
+    Output('open-popup-button', 'disabled'),
+
     Input({'type': 'git_button', 'index': 3}, 'n_clicks'),
     State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
     Input('cwd', 'children')
@@ -523,38 +529,39 @@ def git_init(n_clicks, cwd, d_clk):
 def check(n_clicks, checked, cwd):
     btn_able = []
     if not os.path.isdir(cwd):
-        return True, 'file', True, True, True, True, True, True, True, 0
+        return True, 'file', True, True, True, True, True, True, True, 0, False
     files = sorted(os.listdir(cwd), key=str.lower)
     # if n_clicks is None:
     # raise PreventUpdate
     update_files = []
-
+    branch_flag = True
     is_git = is_git_repo(cwd)
     if is_git == True:
         msg = 'git repo'
+        branch_flag = False
     else:
         msg = 'not git repo'
-
+        branch_flag = True
     if n_clicks == 1:
         for i in range(len(checked)):
             if checked[i]:
-                if os.path.isdir(cwd+'/'+files[i]):
-                    return is_git, msg, True, True, True, True, True, True, True, 0
+                if os.path.isdir(cwd + '/' + files[i]):
+                    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag
                 update_files.append(files[i])
 
         if len(update_files) == 0:
-            return is_git, msg, True, True, True, True, True, True, True, 0
+            return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag
 
         states = [get_git_file_status(i) for i in update_files]
 
         # committed
         if set(states) and set(states).issubset(set([''])):
             if len(states) == 1:  # check 1 -> rename able
-                return is_git, msg, True, True, True, False, False, False, False, 0
+                return is_git, msg, True, True, True, False, False, False, False, 0, branch_flag
             else:  # multiple check --> rename unable
-                return is_git, msg, True, True, True, False, False, True, True, 0
+                return is_git, msg, True, True, True, False, False, True, True, 0, branch_flag
 
-        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0]
+        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0, branch_flag]
         flag = 1
         for s in states:
             if len(s) == 0:
@@ -575,7 +582,7 @@ def check(n_clicks, checked, cwd):
             btn_able[2] = False
             # return is_git, msg, False, True, True, True, True, True, True, 0
         return btn_able
-    return is_git, msg, True, True, True, True, True, True, True, 0
+    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag
 
 
 # Add (git add) [ untracked -> staged / modified -> staged ]
@@ -755,15 +762,6 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
-def find_branch():
-    result = os.popen("git branch").read()
-    result1 = os.popen("git branch -r").read()
-    local, remote = [], []
-    local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and i]
-    if result1:
-        remote = [i.strip() for i in result1.split('\n') if "->" not in i and i]
-
-    return local + remote
 
 @app.callback(
     Output('popup', 'is_open'),
@@ -783,7 +781,6 @@ def toggle_popup(open_clicks, close_clicks, is_open, b1, b2, b3, b4):
         branch = find_branch()
         return True, branch, 0, 0
     return False, [], 0, 0
-
 
 
 @app.callback(
@@ -851,6 +848,7 @@ def checkout_branch(click, value, cwd, d_clk, b2):
         return d_clk + 1, b2 + 1, True, str(data)
     return d_clk, b2, False, []
 
+
 @app.callback(
     Output('b3', 'n_clicks'),
     Output('create_popup', 'is_open'),
@@ -876,6 +874,7 @@ def create_branch(click, value, cwd, b3):
         return b3 + 1, True, str(data)
     return b3, False, ''
 
+
 @app.callback(
     Output('b4', 'n_clicks'),
     Output('rename_popup', 'is_open'),
@@ -891,7 +890,7 @@ def rename_branch(click, old, new, cwd, b4):
         os.system('cd ' + str(Path(cwd)))
         command = ["git", "branch", "-m", old, new]
         data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-        app.logger.info(data)
+
         if not str(data.stderr):
             data = data.stdout
         else:
@@ -901,15 +900,19 @@ def rename_branch(click, old, new, cwd, b4):
         return b4 + 1, True, str(data)
     return b4, False, ''
 
+
 def find_branch_merge():
-    result = os.popen("git branch").read()
-    result1 = os.popen("git branch -r").read()
-    local, remote = [], []
-    local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and not i.startswith("*")and i.strip()]
-    if result1:
-        remote = [i.strip() for i in result1.split('\n') if "->" not in i and not i.startswith("*")and i.strip()]
+    result = os.popen("git branch --no-merged").read()
+    result1 = os.popen("git branch").read()
+    current_branch = os.popen("git branch --show-current").read().strip()
+
+    local = [i.strip() for i in result.split('\n') if
+             "(HEAD detached at" not in i and i.strip() != current_branch and not i.startswith("*") and i.strip()]
+    remote = [i.strip() for i in result1.split('\n') if
+              "->" not in i and i.strip() != current_branch and not i.startswith("*") and i.strip()]
 
     return local + remote
+
 
 def get_current_branch():
     try:
@@ -917,13 +920,14 @@ def get_current_branch():
         return result
     except subprocess.CalledProcessError:
         return None
-    
+
+
 @app.callback(
     Output('popup-2', 'is_open'),
     Output('branch_dropdown-2', 'options'),
     Output('open-popup-button-2', 'n_clicks'),
     Output('close-popup-button-2', 'n_clicks'),
-    Output('current_branch', 'children'),
+    Output('current_branch', 'children'),  # Add this line to update the 'current_branch' div
     Input('open-popup-button-2', 'n_clicks'),
     Input('close-popup-button-2', 'n_clicks'),
     Input('m1', 'n_clicks'),
@@ -932,33 +936,96 @@ def get_current_branch():
 def toggle_popup_2(open_clicks, close_clicks, m1_clicks, is_open):
     if open_clicks:
         branch = find_branch_merge()
-        current_branch = get_current_branch()  
-        return True, branch, 0, 0, f"✡ 현재 Branch: {current_branch}"
-    return False, [], 0, 0, ""  
+        current_branch = get_current_branch()  # Get the current branch
+        return True, branch, 0, 0, f"✡ 현재 Branch: {current_branch}"  # Update the 'current_branch' div content
+    return False, [], 0, 0, ""  # Return an empty string for 'current_branch' if the popup is closed
+
 
 @app.callback(
     Output('m1', 'n_clicks'),
     Output('merge_popup', 'is_open'),
     Output('merge_popup', 'children'),
+    Output('dummy12', 'n_clicks'),
     Input('merge_branch', 'n_clicks'),
     State('branch_dropdown-2', 'value'),
     State('cwd', 'children'),
-    State('m1', 'n_clicks')
+    State('m1', 'n_clicks'),
+    State('dummy12', 'n_clicks'),
 )
-def merge_branch(click, value, cwd, m1_clicks):
+def merge_branch(click, value, cwd, m1_clicks, d_clk):
     if click is not None and click > 0:
         if value:
             if value[0] == "*":
                 value = value[1:].strip()
             os.system('cd ' + str(Path(cwd)))
             command = ["git", "merge", value]
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode == 0:
-                return m1_clicks + 1, True, 'Merge successful'
-            else:
-                error_message = result.stderr.decode()
-                return m1_clicks, True, error_message
-    return m1_clicks, False, ''
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+            if result.stdout:
+                return m1_clicks + 1, True, result.stdout, d_clk + 1
+            elif result.stderr:
+                return m1_clicks + 1, True, result.stderr, d_clk + 1
+    return m1_clicks, False, '', d_clk
+
+
+@app.callback(
+    Output('commit_graph', 'n_clicks'),
+    Input('commit_graph', 'n_clicks'),
+    State('cwd', 'children'),
+
+)
+def commit_graph(n_clicks, cwd):
+    if n_clicks:
+        os.system("cd " + str(Path(cwd)))
+        result = subprocess.run(['git', 'log', '--pretty=oneline', '--graph'], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        output = result.stdout.decode()  # stdout를 문자열로 변환
+        lines = output.split('\n')  # 문자열을 "\n"으로 분리
+        location = {}
+        rev = {}
+        for i in range(len(lines)):
+            lines[i] = lines[i].split()
+            x, y = -1, -1
+            for j in range(len(lines[i])):
+                if lines[i][j] == '*':
+                    x, y = i * 100, j * 100
+                if lines[i][j].isalnum():
+                    location[(x, y)] = lines[i][j]
+                    rev[(lines[i][j])] = (x, y)
+                    break
+        root = tk.Tk()
+        canvas = tk.Canvas(root, width=600, height=600)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar = tk.Scrollbar(root, command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        def on_configure(event):
+            canvas.configure(scrollregion=canvas.bbox('all'))
+
+        canvas.bind('<Configure>', on_configure)
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor='nw')
+        # 버튼 생성 및 좌표 계산
+        rectangles = {}  # 사각형 저장을 위한 딕셔너리
+        for x, y in location.keys():
+            rectangle = canvas.create_rectangle(y, x, y + 50, x + 50, fill='white')  # 사각형 생성
+            rectangles[location[(x, y)]] = rectangle  # 사각형을 저장
+            text = location[(x, y)][:6]  # 사각형에 표시할 텍스트
+            canvas.create_text(y + 25, x + 25, text=text)  # 사각형 중앙에 텍스트 그리기
+            # 작성자 이름과 메시지 표시
+        # 화살표 그리기
+        for x, y in location.keys():
+            node = location[(x, y)]
+            command = ['git', 'log', '--pretty=format:%P', '-n', '1', node]
+            data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
+            parents = data.strip().split()
+            for parent in parents:
+                parent_x, parent_y = rev[parent]  # 부모 사각형의 좌표 가져오기
+                canvas.create_line(y + 25, x + 25, parent_y + 25, parent_x + 25, arrow=tk.LAST)  # 화살표 그리기
+
+        root.mainloop()
+    return 0
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

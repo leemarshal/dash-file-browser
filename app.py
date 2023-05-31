@@ -966,24 +966,49 @@ def merge_branch(click, value, cwd, m1_clicks, d_clk):
                 return m1_clicks + 1, True, result.stderr, d_clk + 1
     return m1_clicks, False, '', d_clk
 
-##주어진 커밋의 자세한 정보를 반환하는 함수
-##%an은 작성자 이름, %ad는 작성일자, %s는 커밋 메시지
+
+
+#주어진 커밋의 자세한 정보를 반환하는 함수
+#%an은 작성자 이름, #ae는 작성자 이메일, %ad는 작성일자, %s는 커밋 메시지
 def get_commit_info(commit):
-    command = ['git', 'show', '--no-patch', '--format="%an%n%ad%n%s"', commit]
+    command = ['git', 'show', '--no-patch', '--format="%an <%ae>%n%ad%n%s"', commit]
     commit_info = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
     return commit_info
 
+#주어진 커밋과 이전 커밋의 차이를 반환하는 함수
+def get_commit_diff(commit):
+    #commit 간의 변경사항 간략히 출력
+    command = ['git', 'diff', '--stat', commit + '^', commit]
+    #commit 간의 변경사항 전체 출력
+    #command = ['git', 'diff', commit + '^', commit]
+    diff_output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
+    return diff_output
+
 #커밋 정보를 표시하기 위한 새로운 창을 생성하고 정보를 텍스트 레이블로 표시
-def show_commit_info(root, commit_info):
+def show_commit_info(root, commit_info, diff_info):
     info_window = tk.Toplevel(root)
     info_window.title("Commit Information")
-
-    info_label = tk.Label(info_window, text=commit_info, justify=tk.LEFT)
+    #커밋 정보 표시창
+    info_label = tk.Label(info_window, text="Detailed information ", justify=tk.LEFT)
     info_label.pack()
+    
+    commit_text = tk.Text(info_window)
+    commit_text.insert(tk.END, commit_info)
+    commit_text.pack()
+
+    #커밋 차이 표시창
+    diff_label = tk.Label(info_window, text="Commit Differnce", justify=tk.LEFT)
+    diff_label.pack()
+
+    diff_text = tk.Text(info_window)
+    diff_text.insert(tk.END, diff_info)
+    diff_text.pack()
+
 def node_clicked(root, node):
     commit_info = get_commit_info(node)
-    show_commit_info(root, commit_info)
-
+    commit_diff = get_commit_diff(node)
+    show_commit_info(root, commit_info, commit_diff)
+    
 @app.callback(
     Output('commit_graph', 'n_clicks'),
     Input('commit_graph', 'n_clicks'),

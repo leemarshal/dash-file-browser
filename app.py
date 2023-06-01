@@ -277,7 +277,7 @@ app.layout = html.Div([
                                       dbc.Modal(
                                           id='popup-2',
                                           children=[
-                                              html.Div('Branch Merge'),
+                                              html.H5('Branch Merge', className='text-center'),
                                               html.Div(id='current_branch',
                                                        style={'margin-top': '10px', 'marginLeft': '20px',
                                                               'fontSize': '18px'}),
@@ -286,15 +286,22 @@ app.layout = html.Div([
                                                               'marginLeft': '20px', 'fontSize': '18px'}),
                                               dcc.Dropdown(
                                                   id='branch_dropdown-2',
-                                                  style={'width': '200px', 'marginLeft': '10px'},
+                                                  style={'width': '200px', 'marginLeft': '10px', 'margin-top': '5px'},
                                               ),
                                               html.Div([
-                                                  html.Button('Merge', id='merge_branch', n_clicks=0,
-                                                              style={'width': '100%'}),
-                                                  html.Button('close', id='close-popup-button-2',
-                                                              style={'width': '100%'})
-                                              ], style={'display': 'flex', 'justify-content': 'space-between',
-                                                        'margin': '20px 0'})
+                                                  dbc.Button('Merge', id='merge_branch', n_clicks=0,
+                                                             color='warning',
+                                                             style={'font_size': '14px', 'margin-left': '60%',
+                                                                    'width': '90px', 'height': '36px',
+                                                                    'margin-bottom': '5px'}
+                                                             ),
+                                                  dbc.Button('close', id='close-popup-button-2',
+                                                             color='secondary',
+                                                             style={'font_size': '14px', 'margin-left': '10px',
+                                                                    'width': '90px', 'height': '36px',
+                                                                    'margin-bottom': '5px'}
+                                                             )
+                                              ])
                                           ]
                                       )]),
                                   html.Br(),

@@ -935,7 +935,7 @@ def rename_branch(click, old, new, cwd, b4):
 
 def find_branch_merge():
     result = os.popen("git branch --no-merged").read()
-    result1 = os.popen("git branch").read()
+    result1 = os.popen("git branch -r").read()
     current_branch = os.popen("git branch --show-current").read().strip()
 
     local = [i.strip() for i in result.split('\n') if

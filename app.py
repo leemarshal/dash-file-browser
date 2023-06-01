@@ -424,9 +424,9 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                         details['extension'] = icon_file("staged")
                         string = ''
                         result1 = get_git_status_meaning(file)
-                        for i in range(len(result1)):
-                            string += result1[i]
-                            if i != len(result1) - 1:
+                        for j in range(len(result1)):
+                            string += result1[j]
+                            if j != len(result1) - 1:
                                 string += " && "
                         details['status'] = string
                     elif result[0] == ' ':  # to implement delete, rename, type change later
@@ -437,7 +437,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                         string = ''
                         result1 = get_git_status_meaning(file)
                         for j in range(len(result1)):
-                            string += result1[i]
+                            string += result1[j]
                             if j != len(result1) - 1:
                                 string += " && "
                         details['status'] = string
@@ -452,7 +452,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                     string = ''
                     result = get_git_status_meaning(file)
                     for j in range(len(result)):
-                        string += result[i]
+                        string += result[j]
                         if j != len(result) - 1:
                             string += " && "
                     details['status'] = string
@@ -464,7 +464,7 @@ def list_cwd_files(cwd, clk_d2, clk_d4, clk_d5, clk_d6, clk_d7, clk_d8, clk_d9, 
                     string = ''
                     result = get_git_status_meaning(file)
                     for j in range(len(result)):
-                        string += result[i]
+                        string += result[j]
                         if j != len(result) - 1:
                             string += " && "
                     details['status'] = string

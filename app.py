@@ -203,7 +203,7 @@ modal_style = {
     'left': '50%',
     'transform': 'translate(-50%, -50%)'
 }
-branch = []
+# branch = []
 
 # button 구현
 app.layout = html.Div([
@@ -768,6 +768,8 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
     Output('branch_dropdown', 'options'),
     Output('open-popup-button', 'n_clicks'),
     Output('close-popup-button', 'n_clicks'),
+    Output('branch_name', 'value'),
+    Output('branch_dropdown', 'value'),
     Input('open-popup-button', 'n_clicks'),
     Input('close-popup-button', 'n_clicks'),
     Input('b1', 'n_clicks'),
@@ -779,8 +781,8 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
 def toggle_popup(open_clicks, close_clicks, is_open, b1, b2, b3, b4):
     if open_clicks:
         branch = find_branch()
-        return True, branch, 0, 0
-    return False, [], 0, 0
+        return True, branch, 0, 0, '', ''
+    return False, [], 0, 0, '', ''
 
 
 @app.callback(

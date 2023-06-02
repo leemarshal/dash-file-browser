@@ -211,6 +211,7 @@ app.layout = html.Div([
                               dbc.Col(lg=1, sm=1, md=1),
                               dbc.Col([
                                   dcc.Store(id='stored_cwd', data=os.getcwd()),
+                                  dcc.Store(id='project_dir', data=os.getcwd()),
                                   html.H1('Dash File Browser'),
                                   html.Hr(), html.Br(), html.Br(), html.Br(),
                                   html.H5(html.B(html.A("⬆️ Parent directory", href='#',
@@ -262,10 +263,18 @@ app.layout = html.Div([
                                                            ),
                                                            dbc.Col([
                                                                dbc.Button(
+                                                                   'Load', id='load_clone',
+                                                                   n_clicks=0,
+                                                                   color='warning',
+                                                                   style={'font-size': '16px', 'margin-left': '62%',
+                                                                          'margin-bottom': '5px',
+                                                                          'width': '90px', 'height': '40px'}
+                                                               ),
+                                                               dbc.Button(
                                                                    'Clone', id='do_clone',
                                                                    n_clicks=0,
                                                                    color='primary',
-                                                                   style={'font-size': '16px', 'margin-left': '75%',
+                                                                   style={'font-size': '16px', 'margin-left': '10px',
                                                                           'margin-bottom': '5px',
                                                                           'width': '90px', 'height': '40px'}
                                                                ),
@@ -326,7 +335,8 @@ app.layout = html.Div([
                                                             html.Div(id='dummy8', n_clicks=0),
                                                             html.Div(id='dummy9', n_clicks=0),
                                                             html.Div(id='dummy10', n_clicks=0),
-                                                            html.Div(id='dummy13', n_clicks=0)
+                                                            html.Div(id='dummy13', n_clicks=0),
+                                                            html.Div(id='dummy14', n_clicks=0)
                                                             ])
 
 
@@ -756,16 +766,57 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
+def get_mem_user(project_dir):
+
+    file_path = project_dir + "/mem_user.txt"
+    lines = []
+    with open(file_path, "r") as file:
+        content = file.read()
+        lines = content.split('\n')
+        if lines[0] == "":
+            file.write("0\n")
+            flag = 0
+            id_val = ""
+            token_val = ""
+        else:
+            flag = int(lines[0])
+            id_val = lines[1] if len(lines) > 1 else ""
+            token_val = lines[2] if len(lines) > 2 else ""
+    return flag, id_val, token_val
+
+
+def write_mem_user(project_dir, id_val, token_val):
+    file_path = project_dir + "/mem_user.txt"
+    with open(file_path, "w+") as file:
+        file.seek(0)
+        file.write("1\n")
+        file.write(id_val + "\n")
+        file.write(token_val + "\n")
+        file.truncate()
+
+
 #visibility와 git clone을 분리해보자
 @app.callback(
     Output('modal_clone', 'is_open'),
     Input('git_clone', 'n_clicks'),
     Input('close_clone', 'n_clicks'),
     Input('dummy13', 'n_clicks'),
+    Input('dummy14', 'n_clicks'),
     [State('modal_clone', 'is_open')]
 )
-def toggle_clone_modal(open_clicks, close_clicks, clk_d13, is_open):
-    if open_clicks or close_clicks or clk_d13:
+def toggle_clone_modal(open_clicks, close_clicks, clk_d13, clk_d14, is_open):
+    triggered_id = callback_context.triggered_id
+    if triggered_id == 'dummy14':
+        if clk_d14:
+            return not is_open
+        else:
+            return is_open
+    if triggered_id == 'dummy13':
+        if clk_d13:
+            return not is_open
+        else:
+            return is_open
+    if open_clicks or close_clicks:
         return not is_open
     return is_open
 
@@ -777,59 +828,79 @@ def toggle_clone_modal(open_clicks, close_clicks, clk_d13, is_open):
 def visibility_control(visibility):
     disabled_id = True
     disabled_token = True
+
     if visibility == 'public':
         disabled_id = True
         disabled_token = True
     else:
         disabled_id = False
         disabled_token = False
+
     return disabled_id, disabled_token
+
 @app.callback(
     Output('dummy13', 'n_clicks'),
+    Output('dummy14', 'n_clicks'),
     Output('git_repo_url', 'value'),
     Output('git_id', 'value'),
     Output('git_token', 'value'),
     Input('do_clone', 'n_clicks'),
+    Input('load_clone', 'n_clicks'),
     State('visibility', 'value'),
     State('git_repo_url', 'value'),
     State('git_id', 'value'),
     State('git_token', 'value'),
     State('cwd', 'children'),
     State('dummy13', 'n_clicks'),
-    State('modal_clone', 'is_open')
+    State('dummy14', 'n_clicks'),
+    State('project_dir', 'data')
+    #State('modal_clone', 'is_open')
 )
-def git_clone(do_clk, visibility, url, id, token, cwd, clk_d13, is_open):
+def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d14, project_dir):
+    triggered_id = callback_context.triggered_id
+    if triggered_id == 'load_clone':
+        flag, id_val, token_val = get_mem_user(project_dir)
+        clk_d14 += 1
+        return 0, clk_d14, "", id_val, token_val
+
     if not do_clk == 0:
         if visibility == 'public':
                 try:
                     # Run the 'git clone' command
+                    url = url[len("https://"):]
+                    url = 'https://' + ':' + '@' + url
                     command = ['git', 'clone', url]
                     os.system('cd ' + str(Path(cwd)))
-                    subprocess.run(command, check=True)
+                    result = subprocess.run(command, check=True, capture_output=True, text=True)
+                    output = result.stdout
                     print("Clone successful!")
-                    clk_d13 += 1
+                    clk_d13 = 1
                 except subprocess.CalledProcessError as e:
                     if e.returncode == 128:
                         print("Repository does not exist.")
                     else:
                         print("An error occurred while cloning the repository:", str(e))
+                    clk_d13 = 0
         else:
                 try:
                     # Run the 'git clone' command
                     # https://<username>:<password_or_token>@github.com/<owner>/<repo>.git
+                    url = url[len("https://"):]
                     url = 'https://' + id + ':' + token + '@' + url
                     command = ['git', 'clone', url]
                     os.system('cd ' + str(Path(cwd)))
                     subprocess.run(command, check=True)
                     print("Clone successful!")
-                    clk_d13 += 1
+                    write_mem_user(project_dir, id, token)
+                    clk_d13 = 1
                 except subprocess.CalledProcessError as e:
                     if e.returncode == 128:
                         print("Repository does not exist.")
                     else:
                         print("An error occurred while cloning the repository:", str(e))
-        return clk_d13, '', '', ''
-    return clk_d13, '', '', ''
+                    clk_d13 = 0
+        return clk_d13, 0, '', '', ''
+    return clk_d13, 0, '', '', ''
 
 
 if __name__ == '__main__':

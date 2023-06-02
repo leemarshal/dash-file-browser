@@ -216,53 +216,6 @@ app.layout = html.Div([
                               href="https://github.com/eliasdabbas/dash-file-browser",
                               title="Fork me on GitHub", **{"data-ribbon": "Fork me on GitHub"}),
                           html.Br(), html.Br(),
-                          html.Button('branch', id='open-popup-button'),
-                          html.Button('Commit Graph', id='commit_graph'),
-                          dbc.Modal(
-                              id='popup',
-                              style=modal_style,
-                              children=[
-                                  html.Div('Branch Action'),
-                                  dbc.Row([dcc.Input(id='branch_name',
-                                                     style={'width': '200px', 'margin-left': 'True'},
-                                                     placeholder="input branch name"),
-                                           dcc.Dropdown(
-                                               id='branch_dropdown',
-                                               style={'width': '200px', 'margin-left': 'auto'},
-                                               options=[]), ]),
-                                  dbc.Row(
-                                      dbc.Col(
-                                          [
-                                              html.Button('rename', id='rename_branch', n_clicks=0),
-                                              html.Button('create', id='create_branch', n_clicks=0),
-                                              html.Button('delete', id='delete_branch', n_clicks=0),
-                                              html.Button('checkout', id='checkout_branch', n_clicks=0),
-                                          ],
-                                          className='d-flex justify-content-center align-items-center',  # 중앙 정렬
-                                      ),
-                                      justify='center',  # 가로 정렬
-                                  ),
-                                  html.Button('close', id='close-popup-button', ), ]),
-                          html.Button('branch_merge', id='open-popup-button-2'),
-                          dbc.Modal(
-                              id='popup-2',
-                              children=[
-                                  html.Div('Branch Merge'),
-                                  html.Div(id='current_branch',
-                                           style={'margin-top': '10px', 'marginLeft': '20px', 'fontSize': '18px'}),
-                                  html.Div('✡ Merge할 branch', style={'display': 'inline-block', 'margin-right': '10px',
-                                                                     'marginLeft': '20px', 'fontSize': '18px'}),
-                                  dcc.Dropdown(
-                                      id='branch_dropdown-2',
-                                      style={'width': '200px', 'marginLeft': '10px'},
-                                  ),
-                                  html.Div([
-                                      html.Button('Merge', id='merge_branch', n_clicks=0, style={'width': '100%'}),
-                                      html.Button('close', id='close-popup-button-2', style={'width': '100%'})
-                                  ], style={'display': 'flex', 'justify-content': 'space-between', 'margin': '20px 0'})
-                              ]
-                          ),
-
                           dbc.Row([
                               dbc.Col(lg=1, sm=1, md=1),
                               dbc.Col([
@@ -273,6 +226,85 @@ app.layout = html.Div([
                                                         id='parent_dir'))),
                                   html.H3([html.Code(os.getcwd(), id='cwd')]),
                                   html.Br(), html.Br(),
+                                  dbc.Col([
+                                      html.Button('branch', id='open-popup-button'),
+                                      html.Button('Commit Graph', id='commit_graph', style={"margin-left": "15px"}),
+                                      dbc.Modal(
+                                          id='popup',
+                                          size='lg',
+                                          # style=modal_style,
+                                          children=[
+                                              html.H5('Branch Action', className='text-center'),
+                                              # dbc.Col([]),
+                                              dbc.Row(
+                                                  html.Div(
+                                                      [
+                                                          dcc.Input(id='branch_name',
+                                                                    style={'width': '150px', 'margin-left': '10px'},
+                                                                    placeholder="input branch name"),
+                                                          dcc.Dropdown(
+                                                              id='branch_dropdown',
+                                                              style={'width': '200px', 'margin-left': '5px'},
+                                                              options=[]),
+                                                          dbc.Button('create', id='create_branch', n_clicks=0,
+                                                                     color='primary',
+                                                                     style={'font_size': '16px', 'margin-left': '8%',
+                                                                            'width': '80px', 'height': '38px'}),
+                                                          dbc.Button('rename', id='rename_branch', n_clicks=0,
+                                                                     color='warning',
+                                                                     style={'font_size': '16px', 'margin-left': '8px',
+                                                                            'width': '80px', 'height': '38px'}),
+                                                          dbc.Button('delete', id='delete_branch', n_clicks=0,
+                                                                     color='danger',
+                                                                     style={'font_size': '16px', 'margin-left': '8px',
+                                                                            'width': '80px', 'height': '38px'}),
+                                                          dbc.Button('checkout', id='checkout_branch', n_clicks=0,
+                                                                     color='light',
+                                                                     style={'font_size': '16px', 'margin-left': '8px',
+                                                                            'width': '90px', 'height': '38px'}),
+                                                      ],
+                                                      className='d-flex align-items-center'
+                                                      # 중앙 정렬
+                                                  )
+                                              ),
+                                              dbc.Button('close', id='close-popup-button',
+                                                         color='secondary',
+                                                         style={'font_size': '16px', 'margin-left': '86%',
+                                                                'margin-top': '5px', 'margin-bottom': '5px',
+                                                                'width': '100px', 'height': '38px'})]),
+                                      html.Button('branch_merge', id='open-popup-button-2',
+                                                  style={"margin-left": "15px"}),
+                                      dbc.Modal(
+                                          id='popup-2',
+                                          children=[
+                                              html.H5('Branch Merge', className='text-center'),
+                                              html.Div(id='current_branch',
+                                                       style={'margin-top': '10px', 'marginLeft': '20px',
+                                                              'fontSize': '18px'}),
+                                              html.Div('✡ Merge할 branch',
+                                                       style={'display': 'inline-block', 'margin-right': '10px',
+                                                              'marginLeft': '20px', 'fontSize': '18px'}),
+                                              dcc.Dropdown(
+                                                  id='branch_dropdown-2',
+                                                  style={'width': '200px', 'marginLeft': '10px', 'margin-top': '5px'},
+                                              ),
+                                              html.Div([
+                                                  dbc.Button('Merge', id='merge_branch', n_clicks=0,
+                                                             color='warning',
+                                                             style={'font_size': '14px', 'margin-left': '60%',
+                                                                    'width': '90px', 'height': '36px',
+                                                                    'margin-bottom': '5px'}
+                                                             ),
+                                                  dbc.Button('close', id='close-popup-button-2',
+                                                             color='secondary',
+                                                             style={'font_size': '14px', 'margin-left': '10px',
+                                                                    'width': '90px', 'height': '36px',
+                                                                    'margin-bottom': '5px'}
+                                                             )
+                                              ])
+                                          ]
+                                      )]),
+                                  html.Br(),
                                   dbc.Col([html.Button('git init', id={'type': 'git_button', 'index': 1}, n_clicks=0,
                                                        disabled=False),  # git init button 'gitinit-val'
                                            html.Button('not git repo', id={'type': 'git_button', 'index': 2},
@@ -905,7 +937,7 @@ def rename_branch(click, old, new, cwd, b4):
 
 def find_branch_merge():
     result = os.popen("git branch --no-merged").read()
-    result1 = os.popen("git branch").read()
+    result1 = os.popen("git branch -r").read()
     current_branch = os.popen("git branch --show-current").read().strip()
 
     local = [i.strip() for i in result.split('\n') if
@@ -970,36 +1002,37 @@ def merge_branch(click, value, cwd, m1_clicks, d_clk):
     return m1_clicks, False, '', d_clk
 
 
-
-#주어진 커밋의 자세한 정보를 반환하는 함수
-#%an은 작성자 이름, #ae는 작성자 이메일, %ad는 작성일자, %s는 커밋 메시지
+# 주어진 커밋의 자세한 정보를 반환하는 함수
+# %an은 작성자 이름, #ae는 작성자 이메일, %ad는 작성일자, %s는 커밋 메시지
 def get_commit_info(commit):
     command = ['git', 'show', '--no-patch', '--format="%an <%ae>%n%ad%n%s"', commit]
     commit_info = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
     return commit_info
 
-#주어진 커밋과 이전 커밋의 차이를 반환하는 함수
+
+# 주어진 커밋과 이전 커밋의 차이를 반환하는 함수
 def get_commit_diff(commit):
-    #commit 간의 변경사항 간략히 출력
+    # commit 간의 변경사항 간략히 출력
     command = ['git', 'diff', '--stat', commit + '^', commit]
-    #commit 간의 변경사항 전체 출력
-    #command = ['git', 'diff', commit + '^', commit]
+    # commit 간의 변경사항 전체 출력
+    # command = ['git', 'diff', commit + '^', commit]
     diff_output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
     return diff_output
 
-#커밋 정보를 표시하기 위한 새로운 창을 생성하고 정보를 텍스트 레이블로 표시
+
+# 커밋 정보를 표시하기 위한 새로운 창을 생성하고 정보를 텍스트 레이블로 표시
 def show_commit_info(root, commit_info, diff_info):
     info_window = tk.Toplevel(root)
     info_window.title("Commit Information")
-    #커밋 정보 표시창
+    # 커밋 정보 표시창
     info_label = tk.Label(info_window, text="Detailed information ", justify=tk.LEFT)
     info_label.pack()
-    
+
     commit_text = tk.Text(info_window)
     commit_text.insert(tk.END, commit_info)
     commit_text.pack()
 
-    #커밋 차이 표시창
+    # 커밋 차이 표시창
     diff_label = tk.Label(info_window, text="Commit Differnce", justify=tk.LEFT)
     diff_label.pack()
 
@@ -1007,11 +1040,13 @@ def show_commit_info(root, commit_info, diff_info):
     diff_text.insert(tk.END, diff_info)
     diff_text.pack()
 
+
 def node_clicked(root, node):
     commit_info = get_commit_info(node)
     commit_diff = get_commit_diff(node)
     show_commit_info(root, commit_info, commit_diff)
-    
+
+
 @app.callback(
     Output('commit_graph', 'n_clicks'),
     Input('commit_graph', 'n_clicks'),
@@ -1075,6 +1110,7 @@ def commit_graph(n_clicks, cwd):
 
         root.mainloop()
     return 0
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -927,6 +927,7 @@ def get_current_branch():
 @app.callback(
     Output('popup-2', 'is_open'),
     Output('branch_dropdown-2', 'options'),
+    Output('branch_dropdown-2', 'value'),
     Output('open-popup-button-2', 'n_clicks'),
     Output('close-popup-button-2', 'n_clicks'),
     Output('current_branch', 'children'),  # Add this line to update the 'current_branch' div
@@ -939,8 +940,8 @@ def toggle_popup_2(open_clicks, close_clicks, m1_clicks, is_open):
     if open_clicks:
         branch = find_branch_merge()
         current_branch = get_current_branch()  # Get the current branch
-        return True, branch, 0, 0, f"✡ 현재 Branch: {current_branch}"  # Update the 'current_branch' div content
-    return False, [], 0, 0, ""  # Return an empty string for 'current_branch' if the popup is closed
+        return True, branch, "", 0, 0, f"✡ 현재 Branch: {current_branch}"  # Update the 'current_branch' div content
+    return False, [], "", 0, 0, ""  # Return an empty string for 'current_branch' if the popup is closed
 
 
 @app.callback(

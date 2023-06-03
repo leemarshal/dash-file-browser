@@ -631,7 +631,9 @@ def git_init(n_clicks, cwd, d_clk):
     Output({'type': 'git_button', 'index': 9}, 'disabled'),  # git_rename
     Output({'type': 'git_button', 'index': 3}, 'n_clicks'),
     Output('open-popup-button', 'disabled'),
-
+    Output('commit_graph', 'disabled'),
+    Output('open-popup-button-2', 'disabled'),
+    Output('git_clone', 'disabled'),
     Input({'type': 'git_button', 'index': 3}, 'n_clicks'),
     State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
     Input('cwd', 'children')
@@ -639,7 +641,7 @@ def git_init(n_clicks, cwd, d_clk):
 def check(n_clicks, checked, cwd):
     btn_able = []
     if not os.path.isdir(cwd):
-        return True, 'file', True, True, True, True, True, True, True, 0, False
+        return True, 'file', True, True, True, True, True, True, True, 0, False, False, False, False
     files = sorted(os.listdir(cwd), key=str.lower)
     # if n_clicks is None:
     # raise PreventUpdate
@@ -656,22 +658,22 @@ def check(n_clicks, checked, cwd):
         for i in range(len(checked)):
             if checked[i]:
                 if os.path.isdir(cwd + '/' + files[i]):
-                    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag
+                    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
                 update_files.append(files[i])
 
         if len(update_files) == 0:
-            return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag
+            return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
 
         states = [get_git_file_status(i) for i in update_files]
 
         # committed
         if set(states) and set(states).issubset(set([''])):
             if len(states) == 1:  # check 1 -> rename able
-                return is_git, msg, True, True, True, False, False, False, False, 0, branch_flag
+                return is_git, msg, True, True, True, False, False, False, False, 0, branch_flag, branch_flag ,branch_flag, not branch_flag
             else:  # multiple check --> rename unable
-                return is_git, msg, True, True, True, False, False, True, True, 0, branch_flag
+                return is_git, msg, True, True, True, False, False, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
 
-        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0, branch_flag]
+        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag]
         flag = 1
         for s in states:
             if len(s) == 0:
@@ -692,7 +694,7 @@ def check(n_clicks, checked, cwd):
             btn_able[2] = False
             # return is_git, msg, False, True, True, True, True, True, True, 0
         return btn_able
-    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag
+    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
 
 
 # Add (git add) [ untracked -> staged / modified -> staged ]
@@ -872,8 +874,8 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
         return 0, d_clk + 1
     return 0, d_clk
 
-def get_mem_user(project_dir):
 
+def get_mem_user(project_dir):
     file_path = project_dir + "/mem_user.txt"
     lines = []
     with open(file_path, "r") as file:
@@ -901,7 +903,7 @@ def write_mem_user(project_dir, id_val, token_val):
         file.truncate()
 
 
-#visibility와 git clone을 분리해보자
+# visibility와 git clone을 분리해보자
 @app.callback(
     Output('modal_clone', 'is_open'),
     Input('git_clone', 'n_clicks'),
@@ -926,6 +928,7 @@ def toggle_clone_modal(open_clicks, close_clicks, clk_d13, clk_d14, is_open):
         return not is_open
     return is_open
 
+
 @app.callback(
     Output('git_id', 'disabled'),
     Output('git_token', 'disabled'),
@@ -944,6 +947,7 @@ def visibility_control(visibility):
 
     return disabled_id, disabled_token
 
+
 @app.callback(
     Output('dummy13', 'n_clicks'),
     Output('dummy14', 'n_clicks'),
@@ -960,10 +964,11 @@ def visibility_control(visibility):
     State('dummy13', 'n_clicks'),
     State('dummy14', 'n_clicks'),
     State('project_dir', 'data')
-    #State('modal_clone', 'is_open')
+    # State('modal_clone', 'is_open')
 )
 def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d14, project_dir):
     triggered_id = callback_context.triggered_id
+    app.logger.info(triggered_id)
     if triggered_id == 'load_clone':
         flag, id_val, token_val = get_mem_user(project_dir)
         clk_d14 += 1
@@ -971,40 +976,40 @@ def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d1
 
     if not do_clk == 0:
         if visibility == 'public':
-                try:
-                    # Run the 'git clone' command
-                    url = url[len("https://"):]
-                    url = 'https://' + ':' + '@' + url
-                    command = ['git', 'clone', url]
-                    os.system('cd ' + str(Path(cwd)))
-                    result = subprocess.run(command, check=True, capture_output=True, text=True)
-                    output = result.stdout
-                    print("Clone successful!")
-                    clk_d13 = 1
-                except subprocess.CalledProcessError as e:
-                    if e.returncode == 128:
-                        print("Repository does not exist.")
-                    else:
-                        print("An error occurred while cloning the repository:", str(e))
-                    clk_d13 = 0
+            try:
+                # Run the 'git clone' command
+                url = url[len("https://"):]
+                url = 'https://' + ':' + '@' + url
+                command = ['git', 'clone', url]
+                os.system('cd ' + str(Path(cwd)))
+                result = subprocess.run(command, check=True, capture_output=True, text=True)
+                output = result.stdout
+                print("Clone successful!")
+                clk_d13 = 1
+            except subprocess.CalledProcessError as e:
+                if e.returncode == 128:
+                    print("Repository does not exist.")
+                else:
+                    print("An error occurred while cloning the repository:", str(e))
+                clk_d13 = 0
         else:
-                try:
-                    # Run the 'git clone' command
-                    # https://<username>:<password_or_token>@github.com/<owner>/<repo>.git
-                    url = url[len("https://"):]
-                    url = 'https://' + id + ':' + token + '@' + url
-                    command = ['git', 'clone', url]
-                    os.system('cd ' + str(Path(cwd)))
-                    subprocess.run(command, check=True)
-                    print("Clone successful!")
-                    write_mem_user(project_dir, id, token)
-                    clk_d13 = 1
-                except subprocess.CalledProcessError as e:
-                    if e.returncode == 128:
-                        print("Repository does not exist.")
-                    else:
-                        print("An error occurred while cloning the repository:", str(e))
-                    clk_d13 = 0
+            try:
+                # Run the 'git clone' command
+                # https://<username>:<password_or_token>@github.com/<owner>/<repo>.git
+                url = url[len("https://"):]
+                url = 'https://' + id + ':' + token + '@' + url
+                command = ['git', 'clone', url]
+                os.system('cd ' + str(Path(cwd)))
+                subprocess.run(command, check=True)
+                print("Clone successful!")
+                write_mem_user(project_dir, id, token)
+                clk_d13 = 1
+            except subprocess.CalledProcessError as e:
+                if e.returncode == 128:
+                    print("Repository does not exist.")
+                else:
+                    print("An error occurred while cloning the repository:", str(e))
+                clk_d13 = 0
         return clk_d13, 0, '', '', ''
     return clk_d13, 0, '', '', ''
 
@@ -1313,17 +1318,31 @@ def commit_graph(n_clicks, cwd):
             info_text = f'{author}\n{message}'
             canvas.create_text(y + 75, x + 25, text=info_text, anchor='w')
         # 화살표 그리기
+        p_dict = find_parent(cwd)
         for x, y in location.keys():
             node = location[(x, y)]
-            command = ['git', 'log', '--pretty=format:%P', '-n', '1', node]
-            data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8').stdout
-            parents = data.strip().split()
+            app.logger.info(node)
+            parents = p_dict[node]
             for parent in parents:
                 parent_x, parent_y = rev[parent]  # 부모 사각형의 좌표 가져오기
                 canvas.create_line(y + 25, x + 25, parent_y + 25, parent_x + 25, arrow=tk.LAST)  # 화살표 그리기
-
         root.mainloop()
     return 0
+
+
+def find_parent(cwd):
+    os.system("cd " + str(Path(cwd)))
+    result = subprocess.run(["git", "log", "--pretty=format:%H %P"], stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, encoding='utf-8').stdout
+    parent_dict = {}
+    if not result:
+        return {}
+    result = result.split("\n")
+    for i in range(len(result)):
+        result[i] = result[i].split()
+        app.logger.info(result[i])
+        parent_dict[result[i][0]] = result[i][1:]
+    return parent_dict
 
 
 if __name__ == '__main__':

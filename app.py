@@ -356,7 +356,8 @@ app.layout = html.Div([
                                                               color='warning',
                                                               style={'font-size': '16px', 'margin-left': '62%',
                                                                      'margin-bottom': '5px',
-                                                                     'width': '90px', 'height': '40px'}
+                                                                     'width': '90px', 'height': '40px'},
+                                                              disabled=True
                                                           ),
                                                           dbc.Button(
                                                               'Clone', id='do_clone',
@@ -929,20 +930,24 @@ def toggle_clone_modal(open_clicks, close_clicks, clk_d13, clk_d14, is_open):
 @app.callback(
     Output('git_id', 'disabled'),
     Output('git_token', 'disabled'),
+    Output('load_clone', 'disabled'),
     Input('visibility', 'value')
 )
 def visibility_control(visibility):
     disabled_id = True
     disabled_token = True
-
+    disabled_load = True
     if visibility == 'public':
         disabled_id = True
         disabled_token = True
+        disabled_load = True
+
     else:
         disabled_id = False
         disabled_token = False
+        disabled_load = False
 
-    return disabled_id, disabled_token
+    return disabled_id, disabled_token, disabled_load
 
 
 @app.callback(
@@ -969,8 +974,7 @@ def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d1
     if triggered_id == 'load_clone':
         flag, id_val, token_val = get_mem_user(project_dir)
         clk_d14 += 1
-        return 0, clk_d14, "", id_val, token_val
-
+        return 0, clk_d14, url, id_val, token_val
     if not do_clk == 0:
         if visibility == 'public':
             try:

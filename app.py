@@ -914,18 +914,15 @@ def write_mem_user(project_dir, id_val, token_val):
 )
 def toggle_clone_modal(open_clicks, close_clicks, clk_d13, clk_d14, is_open):
     triggered_id = callback_context.triggered_id
-    if triggered_id == 'dummy14':
-        if clk_d14:
+    if triggered_id == 'git_clone' or triggered_id == 'close_clone':
+        if open_clicks or close_clicks:
             return not is_open
         else:
             return is_open
-    if triggered_id == 'dummy13':
-        if clk_d13:
-            return not is_open
-        else:
-            return is_open
-    if open_clicks or close_clicks:
+    if clk_d13:
         return not is_open
+    elif clk_d14:
+        return is_open
     return is_open
 
 

@@ -28,6 +28,7 @@ current working directory (git init).
 - 3) 가능한 command button들이 활성화됩니다.
 - 단, [commit] 버튼의 경우, 위의 과정을 따르지 않아도 됩니다.
 
+
 - commit message를 적은 뒤, [commit] 버튼을 누르면 git status 정보를 포함한 팝업창이 생깁니다.
 - 확인을 누르면 git commit command가 실행되고, 취소를 누르면 변화하지 않습니다.
 ### The service supports the version controlling of a git repository. 
@@ -48,6 +49,35 @@ current working directory (git init).
     *   When a user clicks the commit menu, it shows the list of staged changes.
     *   Once the user confirms the commit, it commits the changes to a repository (git commit)
     *   After the commit, the status of the staged files is changed as committed.
+
+## Open Source SW Project #2 (2023-1)
+
+## Feature #1: Branch management
+- The service supports basic functionalities related with branches
+- It always shows the current branch name on the browser (if the current directory is managed by git).
+- ![current branch name](./branchManage/currentBranch.png)
+
+- It provides a menu to create, delete, rename, and checkout branches and performs the following actions when a user selects it.
+- ![branch Action](./branchManage/branchAction.png)
+- ![branch Action](./branchManage/gitBranch.gif)
+
+* Create: It asks the user to enter a branch name and then creates a branch with the name 
+    * it executes 'git branch [branchname]'
+* Delete: Asks the user to select one of them, and deletes the selected one.
+    * it executes 'git branch -d [branchname]'
+* Rename: Asks the user to select one of them and to enter a new name, and renames the branch
+    * it executes 'git branch -m [old branchname] [new branchname]'
+* Checkout: Asks the user to select one of them, and checkout the branch.
+    * it executes 'git checkout [branchname]'
+* If it is not possible to perform the requested action, then report an error message to the user. 
+
+## Feature #3: Git commit history
+- The service shows the commit history of a project in the form of a simplified graph.
+    - The history basically includes the workflow of the current branch.
+    - Each commit object in the graph includes its author name and message
+    - If a user chooses a commit object, then it provides the detailed information about the commit
+
+- ![branch Action](./branchManage/commitGraph.gif)
 
 ## Important Notes
 ### __(주의)원하는 command를 입력하고 싶다면 반드시 checkbox에 check한 뒤, [check] 버튼을 사용해야합니다!__

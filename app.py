@@ -646,9 +646,10 @@ def git_init(n_clicks, cwd, d_clk):
     Output('git_clone', 'disabled'),
     Input({'type': 'git_button', 'index': 3}, 'n_clicks'),
     State({'type': 'dynamic-checkbox', 'index': ALL}, 'checked'),
-    Input('cwd', 'children')
+    Input('cwd', 'children'),
+    Input('c1', 'n_clicks')
 )
-def check(n_clicks, checked, cwd):
+def check(n_clicks, checked, cwd, c1):
     btn_able = []
     if not os.path.isdir(cwd):
         return True, 'file', True, True, True, True, True, True, True, 0, True, True, True, True

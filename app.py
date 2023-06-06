@@ -378,13 +378,24 @@ app.layout = html.Div([
                                                   ]
                                               )
                                           ]
-                                      )
+                                      ),
                                   ]),
+                                  html.Button(
+                                      id='currentBranch',
+                                      disabled=True,
+                                      style={
+                                          # 'padding': '10px',  # 네모칸 안 여백
+                                          'border': '1px solid black',
+                                          'width': '200px',  # 네모칸 가로 크기
+                                          'height': '30px',
+                                          'margin-top': '5px',
+                                          'margin-bottom': '5px'
+                                      }),
                                   html.Br(),
                                   dbc.Col([html.Button('git init', id={'type': 'git_button', 'index': 1}, n_clicks=0,
                                                        disabled=False),  # git init button 'gitinit-val'
-                                           html.Button('not git repo', id={'type': 'git_button', 'index': 2},
-                                                       disabled=True),  # is git repo button, but disabled 'is_gitrepo'
+                                           # html.Button('not git repo', id={'type': 'git_button', 'index': 2},
+                                           #            disabled=True),  # is git repo button, but disabled 'is_gitrepo'
                                            html.Button('check', id={'type': 'git_button', 'index': 3}, value='',
                                                        style={"margin-left": "15px"}),  # 'check'
                                            html.Button('add', id={'type': 'git_button', 'index': 4}, disabled=True,
@@ -622,7 +633,7 @@ def git_init(n_clicks, cwd, d_clk):
 # checkbox를 활용해 command할 파일 선택
 @app.callback(
     Output({'type': 'git_button', 'index': 1}, 'disabled'),  # git_init
-    Output({'type': 'git_button', 'index': 2}, 'children'),  # is_git_repo
+    Output('currentBranch', 'children'),  # is_git_repo
     Output({'type': 'git_button', 'index': 4}, 'disabled'),  # git_add
     Output({'type': 'git_button', 'index': 5}, 'disabled'),  # git_restore
     Output({'type': 'git_button', 'index': 6}, 'disabled'),  # git_unstaged
@@ -650,7 +661,10 @@ def check(n_clicks, checked, cwd):
     branch_flag = True
     is_git = is_git_repo(cwd)
     if is_git == True:
-        msg = 'git repo'
+        command = ["git", "branch", "--show-current"]
+        result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+        #app.logger.info(result)
+        msg = "current branch: " + result.stdout.strip()
         branch_flag = False
     else:
         msg = 'not git repo'
@@ -970,7 +984,7 @@ def visibility_control(visibility):
 )
 def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d14, project_dir):
     triggered_id = callback_context.triggered_id
-    app.logger.info(triggered_id)
+    #app.logger.info(triggered_id)
     if triggered_id == 'load_clone':
         flag, id_val, token_val = get_mem_user(project_dir)
         clk_d14 += 1
@@ -1089,7 +1103,7 @@ def checkout_branch(click, value, cwd, d_clk, b2):
     if value:
         if value[0] == "*":
             value = value[1:].strip()
-        app.logger.info(value)
+        #app.logger.info(value)
         os.system('cd ' + str(Path(cwd)))
         command = ["git", "checkout", value]
         data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
@@ -1118,7 +1132,7 @@ def create_branch(click, value, cwd, b3):
         command = ["git", "branch", value]
 
         data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-        app.logger.info(data)
+        #app.logger.info(data)
         if not str(data.stderr):
             data = data.stdout
         else:
@@ -1322,7 +1336,7 @@ def commit_graph(n_clicks, cwd):
         p_dict = find_parent(cwd)
         for x, y in location.keys():
             node = location[(x, y)]
-            app.logger.info(node)
+            #app.logger.info(node)
             parents = p_dict[node]
             for parent in parents:
                 parent_x, parent_y = rev[parent]  # 부모 사각형의 좌표 가져오기
@@ -1341,7 +1355,7 @@ def find_parent(cwd):
     result = result.split("\n")
     for i in range(len(result)):
         result[i] = result[i].split()
-        app.logger.info(result[i])
+        #app.logger.info(result[i])
         parent_dict[result[i][0]] = result[i][1:]
     return parent_dict
 

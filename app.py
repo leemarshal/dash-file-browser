@@ -382,12 +382,9 @@ app.layout = html.Div([
                                   ]),
                                   html.Button(
                                       id='currentBranch',
-                                      disabled=True,
                                       style={
                                           # 'padding': '10px',  # 네모칸 안 여백
                                           'border': '1px solid black',
-                                          'width': '200px',  # 네모칸 가로 크기
-                                          'height': '30px',
                                           'margin-top': '5px',
                                           'margin-bottom': '5px'
                                       }),
@@ -449,7 +446,8 @@ app.layout = html.Div([
                                                             dbc.Modal(id='merge_popup', children=[], ),
                                                             html.Div(id='dummy12', n_clicks=0),
                                                             html.Div(id='dummy13', n_clicks=0),
-                                                            html.Div(id='dummy14', n_clicks=0)
+                                                            html.Div(id='dummy14', n_clicks=0),
+                                                            html.Div(id='c1', n_clicks=0),
                                                             ])
 
 
@@ -653,7 +651,7 @@ def git_init(n_clicks, cwd, d_clk):
 def check(n_clicks, checked, cwd):
     btn_able = []
     if not os.path.isdir(cwd):
-        return True, 'file', True, True, True, True, True, True, True, 0, False, False, False, False
+        return True, 'file', True, True, True, True, True, True, True, 0, True, True, True, True
     files = sorted(os.listdir(cwd), key=str.lower)
     # if n_clicks is None:
     # raise PreventUpdate
@@ -663,7 +661,7 @@ def check(n_clicks, checked, cwd):
     if is_git == True:
         command = ["git", "branch", "--show-current"]
         result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
-        #app.logger.info(result)
+        # app.logger.info(result)
         msg = "current branch: " + result.stdout.strip()
         branch_flag = False
     else:
@@ -673,22 +671,23 @@ def check(n_clicks, checked, cwd):
         for i in range(len(checked)):
             if checked[i]:
                 if os.path.isdir(cwd + '/' + files[i]):
-                    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
+                    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag, branch_flag, not branch_flag
                 update_files.append(files[i])
 
         if len(update_files) == 0:
-            return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
+            return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag, branch_flag, not branch_flag
 
         states = [get_git_file_status(i) for i in update_files]
 
         # committed
         if set(states) and set(states).issubset(set([''])):
             if len(states) == 1:  # check 1 -> rename able
-                return is_git, msg, True, True, True, False, False, False, False, 0, branch_flag, branch_flag ,branch_flag, not branch_flag
+                return is_git, msg, True, True, True, False, False, False, False, 0, branch_flag, branch_flag, branch_flag, not branch_flag
             else:  # multiple check --> rename unable
-                return is_git, msg, True, True, True, False, False, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
+                return is_git, msg, True, True, True, False, False, True, True, 0, branch_flag, branch_flag, branch_flag, not branch_flag
 
-        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag]
+        btn_able = [is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag, branch_flag,
+                    not branch_flag]
         flag = 1
         for s in states:
             if len(s) == 0:
@@ -709,7 +708,7 @@ def check(n_clicks, checked, cwd):
             btn_able[2] = False
             # return is_git, msg, False, True, True, True, True, True, True, 0
         return btn_able
-    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag,branch_flag, not branch_flag
+    return is_git, msg, True, True, True, True, True, True, True, 0, branch_flag, branch_flag, branch_flag, not branch_flag
 
 
 # Add (git add) [ untracked -> staged / modified -> staged ]
@@ -984,7 +983,7 @@ def visibility_control(visibility):
 )
 def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d14, project_dir):
     triggered_id = callback_context.triggered_id
-    #app.logger.info(triggered_id)
+    # app.logger.info(triggered_id)
     if triggered_id == 'load_clone':
         flag, id_val, token_val = get_mem_user(project_dir)
         clk_d14 += 1
@@ -1093,17 +1092,19 @@ def find_branch():
     Output('b2', 'n_clicks'),
     Output('checkout_popup', 'is_open'),
     Output('checkout_popup', 'children'),
+    Output('c1', 'n_clicks'),
     Input('checkout_branch', 'n_clicks'),
     State('branch_dropdown', 'value'),
     State('cwd', 'children'),
     State('dummy11', 'n_clicks'),
     State('b2', 'n_clicks'),
+    State('c1', 'n_clicks'),
 )
-def checkout_branch(click, value, cwd, d_clk, b2):
+def checkout_branch(click, value, cwd, d_clk, b2, c1):
     if value:
         if value[0] == "*":
             value = value[1:].strip()
-        #app.logger.info(value)
+        # app.logger.info(value)
         os.system('cd ' + str(Path(cwd)))
         command = ["git", "checkout", value]
         data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
@@ -1113,8 +1114,8 @@ def checkout_branch(click, value, cwd, d_clk, b2):
             data = data.stderr
         if not data:
             data = 'checkout branch to ' + value
-        return d_clk + 1, b2 + 1, True, str(data)
-    return d_clk, b2, False, []
+        return d_clk + 1, b2 + 1, True, str(data), c1 + 1
+    return d_clk, b2, False, [], c1
 
 
 @app.callback(
@@ -1132,7 +1133,7 @@ def create_branch(click, value, cwd, b3):
         command = ["git", "branch", value]
 
         data = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-        #app.logger.info(data)
+        # app.logger.info(data)
         if not str(data.stderr):
             data = data.stdout
         else:
@@ -1336,7 +1337,7 @@ def commit_graph(n_clicks, cwd):
         p_dict = find_parent(cwd)
         for x, y in location.keys():
             node = location[(x, y)]
-            #app.logger.info(node)
+            # app.logger.info(node)
             parents = p_dict[node]
             for parent in parents:
                 parent_x, parent_y = rev[parent]  # 부모 사각형의 좌표 가져오기
@@ -1355,7 +1356,7 @@ def find_parent(cwd):
     result = result.split("\n")
     for i in range(len(result)):
         result[i] = result[i].split()
-        #app.logger.info(result[i])
+        # app.logger.info(result[i])
         parent_dict[result[i][0]] = result[i][1:]
     return parent_dict
 

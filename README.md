@@ -70,6 +70,18 @@ current working directory (git init).
 * Checkout: Asks the user to select one of them, and checkout the branch.
     * it executes 'git checkout [branchname]'
 * If it is not possible to perform the requested action, then report an error message to the user. 
+## Feature #2: Branch merge (not rebase)
+- The service supports to merge two branches
+- It provides a menu to merge a target branch to the current branch
+- ![branch merge Action](/branchMerge/branchmergeAction.png)
+- ![branch merge Action](/branchMerge/gitMerge.gif)
+
+* It first asks a user to select one of the branches (except the current branch)
+* It then attempts to merge the selected branches
+    * It executes 'git merge [branchname]'
+* If success, It provides the user with a success message
+* Otherwise, It provides the user with an error message
+    * If the merge is failed due to conflict, it provides the user with unmerged paths and simply aborts the merge process
 
 ## Feature #3: Git commit history
 - The service shows the commit history of a project in the form of a simplified graph.

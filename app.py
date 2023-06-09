@@ -432,6 +432,9 @@ app.layout = html.Div([
                                                             html.Div(id='dummy8', n_clicks=0),
                                                             html.Div(id='dummy9', n_clicks=0),
                                                             html.Div(id='dummy10', n_clicks=0),
+                                                            html.Div(id='dummy12', n_clicks=0),
+                                                            html.Div(id='dummy13', n_clicks=0),
+                                                            html.Div(id='dummy14', n_clicks=0),
                                                             html.Div(id='b1', n_clicks=0),  # delete용
                                                             dbc.Modal(id='delete_popup', children=[], ),
                                                             html.Div(id='b2', n_clicks=0),  # checkout용
@@ -443,10 +446,9 @@ app.layout = html.Div([
                                                             dbc.Modal(id='rename_popup', children=[], ),
                                                             html.Div(id='m1', n_clicks=0),  # merge용
                                                             dbc.Modal(id='merge_popup', children=[], ),
-                                                            html.Div(id='dummy12', n_clicks=0),
-                                                            html.Div(id='dummy13', n_clicks=0),
-                                                            html.Div(id='dummy14', n_clicks=0),
                                                             html.Div(id='c1', n_clicks=0),
+                                                            dbc.Modal(id='load_popup', children=[]),
+                                                            dbc.Modal(id='clone_popup', children=[]),
                                                             ])
 
 
@@ -892,18 +894,26 @@ def git_commit(cwd, value, d_clk, submit_n_clicks):
 def get_mem_user(project_dir):
     file_path = project_dir + "/mem_user.txt"
     lines = []
-    with open(file_path, "r") as file:
-        content = file.read()
-        lines = content.split('\n')
-        if lines[0] == "":
+    flag = -1
+    id_val = ""
+    token_val = ""
+
+    if os.path.isfile(file_path):
+        with open(file_path, "r") as file:
+            content = file.read()
+            lines = content.split('\n')
+            if lines[0] == "":
+                flag = 0
+            else:
+                flag = int(lines[0])
+                if len(lines) > 1:
+                    id_val = lines[1]
+                if len(lines) > 2:
+                    token_val = lines[2]
+    else:
+        with open(file_path, "w") as file:
             file.write("0\n")
-            flag = 0
-            id_val = ""
-            token_val = ""
-        else:
-            flag = int(lines[0])
-            id_val = lines[1] if len(lines) > 1 else ""
-            token_val = lines[2] if len(lines) > 2 else ""
+
     return flag, id_val, token_val
 
 
@@ -924,7 +934,7 @@ def write_mem_user(project_dir, id_val, token_val):
     Input('close_clone', 'n_clicks'),
     Input('dummy13', 'n_clicks'),
     Input('dummy14', 'n_clicks'),
-    [State('modal_clone', 'is_open')]
+    State('modal_clone', 'is_open')
 )
 def toggle_clone_modal(open_clicks, close_clicks, clk_d13, clk_d14, is_open):
     triggered_id = callback_context.triggered_id
@@ -969,7 +979,13 @@ def visibility_control(visibility):
     Output('git_repo_url', 'value'),
     Output('git_id', 'value'),
     Output('git_token', 'value'),
+    Output('load_popup', 'is_open'),
+    Output('load_popup', 'children'),
+    Output('clone_popup', 'is_open'),
+    Output('clone_popup', 'children'),
+    Output('do_clone', 'n_clicks'),
     Input('do_clone', 'n_clicks'),
+    Input('close_clone', 'n_clicks'),
     Input('load_clone', 'n_clicks'),
     State('visibility', 'value'),
     State('git_repo_url', 'value'),
@@ -978,17 +994,27 @@ def visibility_control(visibility):
     State('cwd', 'children'),
     State('dummy13', 'n_clicks'),
     State('dummy14', 'n_clicks'),
-    State('project_dir', 'data')
-    # State('modal_clone', 'is_open')
+    State('project_dir', 'data'),
+    State('load_popup', 'is_open'),
+    State('clone_popup', 'is_open')
 )
-def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d14, project_dir):
+def git_clone(do_clk, close_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d14, project_dir, load_open, clone_open):
     triggered_id = callback_context.triggered_id
     # app.logger.info(triggered_id)
     if triggered_id == 'load_clone':
         flag, id_val, token_val = get_mem_user(project_dir)
         clk_d14 += 1
-        return 0, clk_d14, url, id_val, token_val
+        if flag == 1:
+            data = 'gitID and access token are loaded'
+        elif flag == 0:
+            data = 'gitID and access token are not found in the file.'
+        elif flag == -1:
+            data = 'save file not found.'
+        else:
+            data = 'error.'
+        return 0, clk_d14, url, id_val, token_val, True, data, False, '', 0
     if not do_clk == 0:
+        data = ''
         if visibility == 'public':
             try:
                 # Run the 'git clone' command
@@ -997,14 +1023,13 @@ def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d1
                 command = ['git', 'clone', url]
                 os.system('cd ' + str(Path(cwd)))
                 result = subprocess.run(command, check=True, capture_output=True, text=True)
-                output = result.stdout
-                print("Clone successful!")
+                data = 'Clone successful'
                 clk_d13 = 1
             except subprocess.CalledProcessError as e:
                 if e.returncode == 128:
-                    print("Repository does not exist.")
+                    data = "Repository does not exist."
                 else:
-                    print("An error occurred while cloning the repository:", str(e))
+                    data = "An error occurred while cloning the repository:" + str(e)
                 clk_d13 = 0
         else:
             try:
@@ -1014,18 +1039,18 @@ def git_clone(do_clk, load_clk, visibility, url, id, token, cwd, clk_d13, clk_d1
                 url = 'https://' + id + ':' + token + '@' + url
                 command = ['git', 'clone', url]
                 os.system('cd ' + str(Path(cwd)))
-                subprocess.run(command, check=True)
-                print("Clone successful!")
+                result = subprocess.run(command, check=True, capture_output=True, text=True)
+                data = 'Clone successful'
                 write_mem_user(project_dir, id, token)
                 clk_d13 = 1
             except subprocess.CalledProcessError as e:
                 if e.returncode == 128:
-                    print("Repository does not exist.")
+                    data = "Repository does not exist."
                 else:
-                    print("An error occurred while cloning the repository:", str(e))
+                    data = "An error occurred while cloning the repository:" + str(e)
                 clk_d13 = 0
-        return clk_d13, 0, '', '', ''
-    return clk_d13, 0, '', '', ''
+        return clk_d13, 0, '', '', '', False, '', True, data, 0
+    return clk_d13, 0, '', '', '', load_open, '', clone_open, '', 0
 
 
 @app.callback(

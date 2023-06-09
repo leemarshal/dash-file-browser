@@ -314,8 +314,7 @@ app.layout = html.Div([
                                               html.Div(
                                                   className='modal-content',
                                                   children=[
-                                                      html.H4('Modal Content'),
-                                                      html.P('This is the content of the modal.'),
+                                                      html.H5('Modal Content', className='text-center'),
                                                       dcc.RadioItems(
                                                           id='visibility',
                                                           options=[
@@ -324,7 +323,7 @@ app.layout = html.Div([
                                                           ],
                                                           value='public', inline=True,
                                                           labelStyle={'display': 'inline-block',
-                                                                      'margin-right': '10px'}
+                                                                      'margin-left': '10px'}
                                                       ),
                                                       dcc.Input(
                                                           id='git_repo_url',

@@ -116,3 +116,5 @@ However, in the case of the [commit] button, you do not need to follow the above
 ### The service provides a functionality to clone a git repository from Github to local.
 - When cloning public repositories, just paste https URL to Github repository address input box.
 - When cloning private repositories, you need to enter the GitHub repository address, ID, and access token in the input box.
+- ![branch Action](./branchClone/public_resized.gif)
+- ![branch Action](./branchClone/load_resized.gif)

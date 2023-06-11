@@ -1108,9 +1108,8 @@ def find_branch():
         remote = [i.strip() for i in result1.split('\n') if "->" not in i and i]
     result = local + remote
     for i in range(len(result)):
-    	if i == get_current_branch():
-    		result[i] = "*" + result[i]
-    
+        if i == get_current_branch():
+            result[i] = "*" + result[i]
     return result
 
 
@@ -1199,7 +1198,7 @@ def rename_branch(click, old, new, cwd, b4):
 
 def find_branch_merge():
     result = os.popen("git branch --no-merged").read()
-    result1 = os.popen("git branch -r").read()
+    result1 = os.popen("git branch -r --no-merged").read()
     current_branch = os.popen("git branch --show-current").read().strip()
 
     local = [i.strip() for i in result.split('\n') if

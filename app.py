@@ -661,10 +661,8 @@ def check(n_clicks, checked, cwd, c1):
     branch_flag = True
     is_git = is_git_repo(cwd)
     if is_git == True:
-        command = ["git", "branch", "--show-current"]
-        result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
-        # app.logger.info(result)
-        msg = "current branch: " + result.stdout.strip()
+        command = get_current_branch()
+        msg = "current branch: " + command
         branch_flag = False
     else:
         msg = 'not git repo'
@@ -1108,8 +1106,12 @@ def find_branch():
     local = [i.strip() for i in result.split('\n') if "(HEAD detached at" not in i and i]
     if result1:
         remote = [i.strip() for i in result1.split('\n') if "->" not in i and i]
-
-    return local + remote
+    result = local + remote
+    for i in range(len(result)):
+    	if i == get_current_branch():
+    		result[i] = "*" + result[i]
+    
+    return result
 
 
 @app.callback(
@@ -1211,6 +1213,9 @@ def find_branch_merge():
 def get_current_branch():
     try:
         result = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+        if result == "HEAD":
+            temp = subprocess.check_output(['git', 'branch']).decode().strip().split()
+            result = temp[4][:-1]        
         return result
     except subprocess.CalledProcessError:
         return None

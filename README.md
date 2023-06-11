@@ -28,7 +28,7 @@ python3 app.py
 ## 2. Requirements:
 - Programming language: Python and dash frameworks
 - Platform to run: Web
-- We recommend Python 3.6 or later that is compatible with the Git CLI to use Python wrappers.
+- To use this program, you need to have __Python version 3.7__ or higher that is compatible with the Git CLI to use Python wrappers.
 - We recommend that you use the latest version of Git to maintain compatibility with Git CLI.
 - Operating systems are available for Linux, and Windows, but work best when running on __Linux systems__.
 
